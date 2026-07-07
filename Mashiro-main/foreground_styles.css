@@ -1,0 +1,24 @@
+.inj-sect {
+    display: contents;
+}
+
+/* Stable styling for injected thumbnails */
+.inj-li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Fallback for any auto-generated class that might be used */
+.eCFXg, [class*="sc-"] {
+    width: 100%;
+    height: 100%;
+    border-radius: 4px;
+    transition: opacity 0.2s ease 0s;
+}
+
+/* Ensure Popular button is visible and clickable */
+#inj-pop {
+    cursor: pointer !important;
+    user-select: none;
+}
