@@ -12,20 +12,29 @@ official `Sort by popularity` mode, and thus will not have 100% accurate results
 
 ## What changed vs. the abandoned original
 
-The upstream extension broke as Pixiv updated its markup (obfuscated `sc-*` CSS classes
-change with every deploy). This fork hardens the extension against that:
+The upstream extension broke as Pixiv updated its markup (hashed `sc-*` CSS classes
+change with every deploy). Cloning Pixiv's own thumbnail nodes then failed the same
+way — the Popular button and result counter moved, but the posts themselves stayed
+blank ([kokseen1/Mashiro#23](https://github.com/kokseen1/Mashiro/issues/23)).
 
-- **Stable, semantic selectors** — targets `data-*` attributes and semantic elements
-  (`input[type="search"]`, `nav[aria-label="Pagination"]`, `ul[role="list"]`,
-  `button[aria-label*="sort"]`) with the old `sc-*` classes only as fallbacks.
-- **Null-safe DOM handling** — every query result is checked before use, so a missing
-  element logs an error instead of crashing the whole content script.
-- **Defensive API handling** — JSON responses and their nested structures are validated
-  before being read; request failures surface in the console instead of failing silently.
-- **Graceful degradation** — if the template thumbnail can't be found yet, Mashiro retries
-  instead of giving up; if the Popular button can't be injected, it reports why.
-- **CI validation** — the repo runs a CI workflow that validates `manifest.json`, syntax-
-  checks every JS file, and verifies the extension structure on every push/PR.
+This fork no longer depends on Pixiv's React tree for rendering:
+
+- **Self-built cards** — Mashiro draws its own thumbnail, title, and author cells.
+  Pixiv class-name churn cannot empty the grid.
+- **Own results container** — injected as a *sibling* of Pixiv's works area
+  (`[data-ga4-label="works_content"]`). React-managed subtrees are not rewritten.
+- **2026 Pixiv anchors** — the Popular button attaches to
+  `[data-ga4-label="order_filter_chip"]` and the charcoal search field, with
+  semantic fallbacks. If the toolbar chip is missing, a floating Popular button
+  still appears.
+- **SPA-aware injection** — Pixiv tag switches do not require a full reload.
+  In-flight requests abort on navigation so they cannot 403-cascade.
+- **Throttled, sequential fetches** — popularity buckets are requested one at a
+  time with a short gap, instead of firing nine recursive searches at once.
+- **Null-safe API handling** — JSON envelopes and nested lists are checked
+  before use; 403/429 stops the run instead of retry-storming.
+- **CI validation** — every push/PR checks that `manifest.json` is Manifest V3,
+  every root `*.js` file parses, and the extension files are present.
 
 ## Demo
 
@@ -39,11 +48,23 @@ change with every deploy). This fork hardens the extension against that:
 4. Click `Load unpacked`
 5. Select this repository's root folder
 
+## How to update
+
+1. `git pull` the latest `main` (or download the newest release zip)
+2. Open `chrome://extensions`
+3. Click **Reload** on Mashiro
+
+If Popular stops appearing or the grid is empty after a Pixiv redesign, the
+selectors at the top of `foreground.js` (`SORT_CHIP_SELECTORS`,
+`WORKS_CONTENT_SELECTORS`, `SEARCHBOX_SELECTOR`) are the first thing to extend.
+Keep the self-built cards — do not go back to cloning Pixiv DOM nodes.
+
 ## Guide
 
-- Button turns **orange** if results from normal search are available
+- Button turns **orange** if results from normal (`users入り`) search are available
 - Otherwise, button turns **blue** if only alternative results are available
 - **Grey** button means no results are available
+- The number next to Popular is how many posts Mashiro has placed in the grid
 
 ## Usage Notes
 
@@ -61,7 +82,36 @@ change with every deploy). This fork hardens the extension against that:
     - `風景`
 - Only Illustrations and Manga are currently supported.
 
+## Changelog
+
+### 0.4.0
+
+- Render popular results with Mashiro-owned cards and CSS (fixes blank-grid
+  breakage after Pixiv markup changes).
+- Attach to current `data-ga4-label` / charcoal search UI; float Popular if
+  the toolbar chip is gone.
+- Follow Pixiv SPA navigations; abort outstanding ajax on route change.
+- Serialize and throttle Pixiv ajax to avoid 403/429 cascades.
+- Space-separate the `users入り` term so custom keyword searches AND correctly.
+- Remove the previous global `[class*="sc-"]` style rule, which could distort
+  Pixiv's own layout.
+
+### 0.3.0
+
+- Flatten the extension to the repository root so Chrome can load it unpacked.
+- First hardening pass (semantic selector fallbacks, null-safe DOM/API access).
+- CI workflow that validates the unpacked extension.
+
+## Roadmap
+
+- Optional result-limit / date-range controls
+- Novel search support
+- A packaged Chrome Web Store / GitHub Release zip
+
 ## License
 
 Released into the public domain under [The Unlicense](LICENSE). Upstream credit:
 [kokseen1/Mashiro](https://github.com/kokseen1/Mashiro) (abandoned).
+
+2026 Pixiv selector and “don't clone React nodes” approach was informed by the
+also-Unlicensed [annoft/Mashiro](https://github.com/annoft/Mashiro) personal fork.
