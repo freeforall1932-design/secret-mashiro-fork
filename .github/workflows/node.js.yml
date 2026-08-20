@@ -1,7 +1,11 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+# This repository is a Chrome extension (Manifest V3), not a Node.js project:
+# there is no package.json, no npm dependencies, no build step, and no test
+# suite. The Node.js CI template (setup-node + npm ci + npm test) therefore
+# does not apply here. Instead, this workflow validates the extension itself:
+# manifest.json must be valid JSON, every JavaScript file must parse, and all
+# required files must be present.
 
-name: Node.js CI
+name: CI
 
 on:
   push:
@@ -10,22 +14,29 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-
+  validate:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
     - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
+
+    - name: Validate manifest.json
+      run: node -e "const m = JSON.parse(require('fs').readFileSync('Mashiro-main/manifest.json', 'utf8')); if (m.manifest_version !== 3) throw new Error('manifest_version must be 3'); console.log('manifest.json is valid JSON (Manifest V3)')"
+
+    - name: Syntax-check JavaScript files
+      run: |
+        set -e
+        for f in Mashiro-main/*.js; do
+          node --check "$f"
+          echo "OK: $f"
+        done
+
+    - name: Verify extension structure
+      run: |
+        test -f Mashiro-main/manifest.json
+        test -f Mashiro-main/background.js
+        test -f Mashiro-main/foreground.js
+        test -f Mashiro-main/foreground_styles.css
+        test -f Mashiro-main/jquery-3.6.0.min.js
+        test -d Mashiro-main/images
+        echo "Extension structure OK"
