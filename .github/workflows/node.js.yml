@@ -21,22 +21,22 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Validate manifest.json
-      run: node -e "const m = JSON.parse(require('fs').readFileSync('Mashiro-main/manifest.json', 'utf8')); if (m.manifest_version !== 3) throw new Error('manifest_version must be 3'); console.log('manifest.json is valid JSON (Manifest V3)')"
+      run: node -e "const m = JSON.parse(require('fs').readFileSync('manifest.json', 'utf8')); if (m.manifest_version !== 3) throw new Error('manifest_version must be 3'); console.log('manifest.json is valid JSON (Manifest V3)')"
 
     - name: Syntax-check JavaScript files
       run: |
         set -e
-        for f in Mashiro-main/*.js; do
+        for f in *.js; do
           node --check "$f"
           echo "OK: $f"
         done
 
     - name: Verify extension structure
       run: |
-        test -f Mashiro-main/manifest.json
-        test -f Mashiro-main/background.js
-        test -f Mashiro-main/foreground.js
-        test -f Mashiro-main/foreground_styles.css
-        test -f Mashiro-main/jquery-3.6.0.min.js
-        test -d Mashiro-main/images
+        test -f manifest.json
+        test -f background.js
+        test -f foreground.js
+        test -f foreground_styles.css
+        test -f jquery-3.6.0.min.js
+        test -d images
         echo "Extension structure OK"
