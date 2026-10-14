@@ -1,0 +1,451 @@
+/* Mashiro settings panel — header / left navigation / card sections,
+   in the spirit of PixivBatchDownloader's panel. Scoped under .mashiro-panel. */
+
+.mashiro-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mashiro-panel-scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.mashiro-panel-window {
+    position: relative;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    width: min(960px, 94vw);
+    height: min(700px, 90vh);
+    border-radius: 12px;
+    background: var(--m-bg);
+    box-shadow: var(--m-shadow);
+    overflow: hidden;
+    animation: mashiro-pop 0.18s ease-out;
+}
+
+@keyframes mashiro-pop {
+    from { opacity: 0; transform: translateY(8px) scale(0.985); }
+    to { opacity: 1; transform: none; }
+}
+
+.mashiro-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--m-border);
+}
+
+.mashiro-panel-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    color: var(--m-orange);
+}
+
+.mashiro-panel-titles {
+    flex: 1;
+    min-width: 0;
+}
+
+.mashiro-panel-titles h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--m-accent);
+    line-height: 1.2;
+}
+
+.mashiro-panel-titles p {
+    margin: 0;
+    color: var(--m-text-2);
+    font-size: 12px;
+}
+
+.mashiro-panel-body {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    min-height: 0;
+}
+
+.mashiro-panel-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 8px;
+    border-right: 1px solid var(--m-border);
+    background: var(--m-bg-2);
+}
+
+.mashiro-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: none;
+    border-left: 3px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--m-text);
+    font-size: 15px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.mashiro-nav-item:hover { background: var(--m-hover); }
+
+.mashiro-nav-item.is-active {
+    border-left-color: var(--m-accent);
+    background: var(--m-accent-soft);
+    color: var(--m-accent);
+}
+
+.mashiro-panel-nav-foot {
+    margin-top: auto;
+    padding: 8px 12px;
+    color: var(--m-text-3);
+    font-size: 12px;
+}
+
+.mashiro-panel-content {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px 20px 24px;
+    background: var(--m-bg-2);
+}
+
+.mashiro-view {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* tip */
+
+.mashiro-tip {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    border-radius: var(--m-radius);
+    background: var(--m-accent-soft);
+    color: var(--m-text);
+}
+
+.mashiro-tip p { margin: 2px 0 0; font-size: 13px; }
+
+/* cards */
+
+.mashiro-card-box {
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius);
+    background: var(--m-bg);
+}
+
+.mashiro-card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--m-border);
+}
+
+.mashiro-card-head h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.mashiro-card-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--m-accent-soft);
+    color: var(--m-accent);
+    flex-shrink: 0;
+}
+
+.mashiro-card-body {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 14px 12px;
+}
+
+/* rows */
+
+.mashiro-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--m-border);
+}
+
+.mashiro-row:last-child { border-bottom: none; }
+
+.mashiro-row-stacked {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+}
+
+.mashiro-row-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.mashiro-row-label { font-size: 14px; }
+
+.mashiro-row-help {
+    color: var(--m-text-2);
+    font-size: 12px;
+}
+
+.mashiro-input {
+    padding: 6px 8px;
+    border: 1px solid var(--m-border);
+    border-radius: 6px;
+    background: var(--m-bg);
+    color: var(--m-text);
+    font: inherit;
+    font-size: 13px;
+}
+
+.mashiro-input:focus {
+    outline: none;
+    border-color: var(--m-accent);
+    box-shadow: 0 0 0 3px var(--m-accent-soft);
+}
+
+.mashiro-input-number { width: 96px; text-align: right; }
+.mashiro-input-select { max-width: 320px; }
+.mashiro-input-text { width: 180px; }
+.mashiro-input-textarea { width: 100%; resize: vertical; }
+
+/* switch */
+
+.mashiro-switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 40px;
+    height: 22px;
+}
+
+.mashiro-switch-input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.mashiro-switch-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: var(--m-bg-3);
+    transition: background-color 0.15s ease;
+}
+
+.mashiro-switch-track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    transition: transform 0.15s ease;
+}
+
+.mashiro-switch-input:checked + .mashiro-switch-track { background: var(--m-accent); }
+.mashiro-switch-input:checked + .mashiro-switch-track::after { transform: translateX(18px); }
+.mashiro-switch-input:focus-visible + .mashiro-switch-track { box-shadow: 0 0 0 3px var(--m-accent-soft); }
+
+/* buttons */
+
+.mashiro-button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 10px;
+}
+
+.mashiro-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 16px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.15s ease, background-color 0.15s ease;
+}
+
+.mashiro-button:hover { filter: brightness(1.06); }
+.mashiro-button:disabled { opacity: 0.5; cursor: not-allowed; filter: none; }
+
+.mashiro-button-primary { background: var(--m-accent); color: #fff; }
+.mashiro-button-success { background: var(--m-green); color: #fff; }
+.mashiro-button-danger { background: var(--m-red); color: #fff; }
+.mashiro-button-outline { background: transparent; border-color: var(--m-accent); color: var(--m-accent); }
+.mashiro-button-ghost { background: transparent; border-color: var(--m-border); color: var(--m-text-2); }
+
+/* status */
+
+.mashiro-kv {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+}
+
+.mashiro-kv-key {
+    width: 130px;
+    flex-shrink: 0;
+    color: var(--m-text-2);
+    font-size: 13px;
+}
+
+.mashiro-kv-value { min-width: 0; }
+
+.mashiro-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--m-bg-3);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.mashiro-state::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--m-grey);
+}
+
+.mashiro-state.is-buckets::before,
+.mashiro-state.is-alt::before { background: var(--m-accent); animation: mashiro-pulse 1s ease-in-out infinite; }
+.mashiro-state.is-paused::before { background: var(--m-yellow); }
+.mashiro-state.is-done::before { background: var(--m-green); }
+.mashiro-state.is-error::before { background: var(--m-red); }
+
+@keyframes mashiro-pulse {
+    50% { opacity: 0.3; }
+}
+
+.mashiro-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.mashiro-progress-track {
+    position: relative;
+    flex: 1;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--m-bg-3);
+    overflow: hidden;
+}
+
+.mashiro-progress-fill {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 999px;
+    background: var(--m-accent);
+    transition: width 0.3s ease;
+}
+
+.mashiro-progress-label {
+    min-width: 56px;
+    text-align: right;
+    font-weight: 700;
+}
+
+.mashiro-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    padding: 4px 0;
+    color: var(--m-text-2);
+    font-size: 13px;
+}
+
+.mashiro-stats b { color: var(--m-text); }
+
+.mashiro-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.mashiro-pills .mashiro-bucket-pill b { font-weight: 400; opacity: 0.9; }
+
+/* log */
+
+.mashiro-log {
+    margin: 6px 0 0;
+    padding: 8px 10px;
+    max-height: 220px;
+    overflow-y: auto;
+    list-style: none;
+    border-radius: 6px;
+    background: var(--m-bg-2);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.mashiro-log:empty::before {
+    content: "—";
+    color: var(--m-text-3);
+}
+
+.mashiro-log time { color: var(--m-text-3); }
+.mashiro-log li.is-success { color: var(--m-green); }
+.mashiro-log li.is-warning { color: var(--m-yellow); }
+.mashiro-log li.is-error { color: var(--m-red); }
+
+/* prose */
+
+.mashiro-prose {
+    margin: 8px 0;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.mashiro-prose a { color: var(--m-accent); text-decoration: underline; }
+.mashiro-muted { color: var(--m-text-2); font-size: 13px; }
+
+/* narrow screens */
+
+@media (max-width: 720px) {
+    .mashiro-panel-body { grid-template-columns: 56px 1fr; }
+    .mashiro-nav-item span { display: none; }
+    .mashiro-panel-nav-foot { display: none; }
+    .mashiro-kv { flex-direction: column; align-items: flex-start; gap: 4px; }
+}

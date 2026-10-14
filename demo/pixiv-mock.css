@@ -42,7 +42,7 @@ body {
 
 a { color: inherit; text-decoration: none; }
 
-/* Pixiv-style utility classes used by Mashiro's #inj-pop button. */
+/* Pixiv-style (charcoal) utility classes used by the mock's own sort chips. */
 .flex { display: flex; }
 .items-center { align-items: center; }
 .gap-4 { gap: 4px; }

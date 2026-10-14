@@ -1,0 +1,28 @@
+{
+  "name": "mashiro",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Popular mode for Pixiv search — maintained fork of kokseen1/Mashiro",
+  "license": "Unlicense",
+  "repository": "https://github.com/freeforall1932-design/secret-mashiro-fork",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "check": "tsc --noEmit -p tsconfig.json",
+    "test": "node scripts/build.mjs --test && node --test test/build/unit.test.mjs test/smoke.test.mjs",
+    "demo": "node demo/server.js",
+    "zip": "node scripts/build.mjs --zip",
+    "ci": "npm run build && npm run check && npm test"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "@types/node": "^22.10.0",
+    "esbuild": "^0.24.0",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

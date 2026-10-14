@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+# Generated bundles: keep diffs readable
+dist/js/*.js linguist-generated=true
+dist/style/*.css linguist-generated=true

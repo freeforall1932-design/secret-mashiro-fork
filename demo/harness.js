@@ -1,8 +1,9 @@
 // Demo harness glue (NOT part of the extension).
 //
-// 1. Stubs the tiny slice of `chrome.*` that foreground.js touches.
-// 2. Rewrites jQuery ajax calls from https://www.pixiv.net/ajax/... to this
-//    mock server, so the real foreground.js runs unmodified.
+// 1. Stubs the slice of `chrome.*` the content script touches (runtime,
+//    storage) with an in-memory implementation.
+// 2. Rewrites fetch() calls from https://www.pixiv.net/ajax/... to this mock
+//    server, so the real dist/js/content.js runs unmodified.
 // 3. Renders a mock Pixiv search page from the current URL and supports
 //    SPA-style navigation (pushState) like Pixiv's React router does.
 
@@ -10,12 +11,36 @@
     "use strict";
 
     // ---- 1. chrome stub ------------------------------------------------------
-    var chromeObj = window.chrome || (window.chrome = {});
-    if (!chromeObj.runtime || typeof chromeObj.runtime.getManifest !== "function") {
-        chromeObj.runtime = Object.assign({}, chromeObj.runtime, {
-            getManifest: function () { return { version: window.__harnessVersion || "0.0.0-demo" }; }
-        });
+    var memory = {};
+    function storageArea() {
+        return {
+            get: function (key) {
+                var out = {};
+                var keys = Array.isArray(key) ? key : key ? [key] : Object.keys(memory);
+                keys.forEach(function (k) { if (k in memory) out[k] = JSON.parse(JSON.stringify(memory[k])); });
+                return Promise.resolve(out);
+            },
+            set: function (obj) {
+                Object.keys(obj).forEach(function (k) { memory[k] = JSON.parse(JSON.stringify(obj[k])); });
+                return Promise.resolve();
+            },
+            remove: function (key) { delete memory[key]; return Promise.resolve(); },
+            clear: function () { memory = {}; return Promise.resolve(); }
+        };
     }
+    var chromeObj = window.chrome || (window.chrome = {});
+    chromeObj.runtime = Object.assign({}, chromeObj.runtime, {
+        getManifest: function () { return { version: window.__harnessVersion || "0.0.0-demo" }; },
+        getURL: function (p) { return "/ext/" + p; },
+        onMessage: { addListener: function () {} },
+        id: "mashiro-demo"
+    });
+    chromeObj.storage = {
+        sync: storageArea(),
+        local: storageArea(),
+        onChanged: { addListener: function () {} }
+    };
+    window.__harnessStorage = memory;
 
     var logEl = null;
     var logLines = [];
@@ -25,6 +50,7 @@
         if (!logEl) logEl = document.getElementById("harness-log");
         if (logEl) logEl.textContent = logLines.join("   |   ");
     }
+    window.__harnessLog = log;
 
     function currentTag() {
         var match = location.pathname.match(/\/tags\/([^/]+)/);
@@ -34,31 +60,26 @@
         return new URLSearchParams(location.search).get("q") || "";
     }
 
-    // ---- 2. ajax rewrite -----------------------------------------------------
-    window.__harnessPatchJquery = function () {
-        if (!window.jQuery) return;
-        var origAjax = jQuery.ajax;
-        jQuery.ajax = function (options) {
-            if (typeof options === "string") options = { url: options };
-            if (options && typeof options.url === "string" && /^https:\/\/www\.pixiv\.net\//.test(options.url)) {
-                var rewritten = new URL(options.url.replace(/^https:\/\/www\.pixiv\.net\//, location.origin + "/"));
-                rewritten.searchParams.set("mashiroTag", currentTag());
-                options = Object.assign({}, options, { url: rewritten.toString() });
-                var label = decodeURIComponent(rewritten.pathname) +
-                    (rewritten.searchParams.get("word") ? "?word=" + rewritten.searchParams.get("word") : "");
-                var started = Date.now();
-                log("→ " + label);
-                return origAjax.call(jQuery, options).done(function (data) {
-                    var n = 0;
-                    if (data && data.body) {
-                        if (data.body.illustManga) n = data.body.illustManga.data.length;
-                        else if (data.body.illusts) n = data.body.illusts.length;
-                    }
-                    log("✓ " + label + " → " + n + " items (" + (Date.now() - started) + " ms)");
-                });
-            }
-            return origAjax.call(jQuery, options);
-        };
+    // ---- 2. fetch rewrite ----------------------------------------------------
+    var nativeFetch = window.fetch ? window.fetch.bind(window) : null;
+    window.__harnessRequests = [];
+    window.fetch = function (input, init) {
+        var url = typeof input === "string" ? input : input && input.url;
+        if (typeof url === "string" && /^https:\/\/www\.pixiv\.net\//.test(url)) {
+            var rewritten = new URL(url.replace(/^https:\/\/www\.pixiv\.net\//, location.origin + "/"));
+            rewritten.searchParams.set("mashiroTag", currentTag());
+            var label = decodeURIComponent(rewritten.pathname) +
+                (rewritten.searchParams.get("word") ? "?word=" + rewritten.searchParams.get("word") : "");
+            var started = Date.now();
+            window.__harnessRequests.push(label);
+            log("→ " + label);
+            var impl = window.__harnessFetchImpl || nativeFetch;
+            return impl(rewritten.toString(), init).then(function (response) {
+                log((response.ok ? "✓ " : "✗ " + response.status + " ") + label + " (" + (Date.now() - started) + " ms)");
+                return response;
+            });
+        }
+        return (window.__harnessFetchImpl || nativeFetch)(input, init);
     };
 
     // ---- 3. mock page rendering ---------------------------------------------
@@ -74,8 +95,9 @@
 
     function currentTab() {
         if (/\/manga\/?$/.test(location.pathname)) return "manga";
-        if (/\/artworks\/?$/.test(location.pathname)) return "top";
-        return "illustrations";
+        if (/\/artworks\/?$/.test(location.pathname)) return "artworks";
+        if (/\/illustrations\/?$/.test(location.pathname)) return "illustrations";
+        return "top";
     }
 
     function nativeCard(tag, i) {
@@ -103,23 +125,23 @@
         var page = parseInt(params.get("p") || "1", 10) || 1;
         var total = 1000 + (hash(tag) % 90000);
 
-        document.title = "#" + tag + " - " + (tab === "manga" ? "Manga" : "Illustrations") + " | Mashiro demo";
+        document.title = "#" + tag + " - " + tab + " | Mashiro demo";
         document.getElementById("px-tag-name").textContent = tag;
         document.getElementById("px-tag-total").textContent = total.toLocaleString("en-US");
         document.getElementById("px-works-count").textContent = total.toLocaleString("en-US");
         var box = document.querySelector("input.charcoal-text-field-input");
         if (box) box.value = tag;
 
-        // Tabs keep the current tag.
         document.querySelectorAll(".px-tabs a[data-tab]").forEach(function (link) {
             var kind = link.getAttribute("data-tab");
             link.classList.toggle("px-tab-active", kind === tab);
-            if (kind === "top") link.href = "/tags/" + encodeURIComponent(tag) + "/artworks";
+            if (kind === "top") link.href = "/tags/" + encodeURIComponent(tag);
+            if (kind === "artworks") link.href = "/tags/" + encodeURIComponent(tag) + "/artworks";
             if (kind === "illustrations") link.href = "/tags/" + encodeURIComponent(tag) + "/illustrations";
             if (kind === "manga") link.href = "/tags/" + encodeURIComponent(tag) + "/manga";
         });
 
-        // Optional scenario: Pixiv removed the sort chip -> Mashiro falls back to a floating button.
+        // Scenario: Pixiv removed the sort chip -> Mashiro falls back to a floating button.
         if (params.get("nochip") === "1") {
             var chip = document.querySelector('[data-ga4-label="order_filter_chip"]');
             if (chip) chip.remove();
@@ -137,8 +159,9 @@
         document.getElementById("px-pager").innerHTML = pager;
 
         document.querySelectorAll("#harness a[data-spa]").forEach(function (link) {
-            var linkTag = decodeURIComponent(link.getAttribute("href").match(/\/tags\/([^/]+)/)[1]);
-            link.classList.toggle("harness-current", linkTag === tag);
+            var m = link.getAttribute("href").match(/\/tags\/([^/?]+)/);
+            var linkTag = m ? decodeURIComponent(m[1]) : "";
+            link.classList.toggle("harness-current", linkTag === tag && link.getAttribute("href").indexOf(location.pathname) === 0);
         });
     }
 
@@ -157,13 +180,18 @@
     window.addEventListener("popstate", render);
 
     // This script sits at the end of <body>, so the mock DOM already exists.
-    // Render synchronously so foreground.js (loaded next) sees the finished page,
+    // Render synchronously so content.js (loaded next) sees the finished page,
     // exactly like a content script injected after Pixiv has rendered.
     render();
-    var theme = document.getElementById("harness-theme");
-    theme.addEventListener("change", function () {
-        document.body.classList.toggle("px-dark", theme.checked);
+
+    var themeToggle = document.getElementById("harness-theme");
+    var themeFlag = document.getElementById("gtm-var-theme-kind");
+    themeToggle.addEventListener("change", function () {
+        document.body.classList.toggle("px-dark", themeToggle.checked);
+        // Pixiv exposes its theme here; Mashiro's Theme module watches this text.
+        themeFlag.textContent = themeToggle.checked ? "dark" : "default";
     });
+
     if (typeof fetch === "function") {
         fetch("/ext/manifest.json").then(function (r) { return r.json(); }).then(function (m) {
             window.__harnessVersion = m.version;

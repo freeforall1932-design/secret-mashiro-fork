@@ -6,16 +6,18 @@
 <title>Mashiro UI demo — mock Pixiv search page</title>
 <link rel="icon" href="/ext/images/mashiro.png">
 <link rel="stylesheet" href="/demo/pixiv-mock.css">
-<!-- The real extension stylesheet, exactly as background.js would insertCSS() it. -->
-<link rel="stylesheet" href="/ext/foreground_styles.css">
+<!-- The real extension stylesheet, as declared in manifest.json content_scripts. -->
+<link rel="stylesheet" href="/ext/style/content.css">
 </head>
 <body>
+<!-- Pixiv exposes its current theme in this hidden element; Mashiro follows it. -->
+<span id="gtm-var-theme-kind" hidden>default</span>
 
 <!-- ===== Demo harness (not part of the extension) ===== -->
 <div id="harness">
     <div class="harness-row">
         <strong class="harness-title">Mashiro UI demo harness</strong>
-        <span class="harness-hint">mock Pixiv page + real <code>foreground.js</code> / <code>foreground_styles.css</code> (v<span id="harness-version">?</span>)</span>
+        <span class="harness-hint">mock Pixiv page + real <code>dist/js/content.js</code> / <code>dist/style/content.css</code> (v<span id="harness-version">?</span>)</span>
         <span class="harness-spacer"></span>
         <label class="harness-toggle"><input type="checkbox" id="harness-theme"> Pixiv dark theme</label>
     </div>
@@ -24,7 +26,10 @@
         <a href="/tags/ゆるゆり/illustrations" data-spa>ゆるゆり → orange (users入り found)</a>
         <a href="/tags/御坂美琴/illustrations" data-spa>御坂美琴 → blue (alt / recommendations only)</a>
         <a href="/tags/zzz_no_results/illustrations" data-spa>zzz → grey (nothing)</a>
-        <a href="/tags/ゆるゆり/illustrations?nochip=1">toolbar chip missing → floating button</a>
+        <a href="/tags/ratelimit_test/illustrations" data-spa>429 once → pause &amp; retry</a>
+        <a href="/tags/slow_pixiv/illustrations" data-spa>slow Pixiv (1.5 s/request)</a>
+        <a href="/tags/ゆるゆり" data-spa>Top tab → button redirects</a>
+        <a href="/tags/ゆるゆり/illustrations?nochip=1">chip missing → floating button</a>
     </div>
     <div class="harness-row">
         <span class="harness-label">Mock ajax log:</span>
@@ -65,7 +70,8 @@
     </div>
 
     <nav class="px-tabs" aria-label="Work type">
-        <a href="/tags/ゆるゆり/artworks" data-tab="top" data-spa>Top</a>
+        <a href="/tags/ゆるゆり" data-tab="top" data-spa>Top</a>
+        <a href="/tags/ゆるゆり/artworks" data-tab="artworks" data-spa>Illustrations and Manga</a>
         <a href="/tags/ゆるゆり/illustrations" data-tab="illustrations" data-spa>Illustrations</a>
         <a href="/tags/ゆるゆり/manga" data-tab="manga" data-spa>Manga</a>
         <a href="#" data-tab="novels">Novels</a>
@@ -94,18 +100,17 @@
         <div class="px-works-head">Works <span class="px-count" id="px-works-count">0</span></div>
         <div class="px-native-grid" id="px-native-grid"><!-- filled by harness.js --></div>
     </section>
-    <!-- #inj-container is inserted here by foreground.js (as a sibling of works_content) -->
+    <!-- #mashiro-results is inserted here by content.js (as a sibling of works_content) -->
 
     <nav class="px-pager" aria-label="Pagination" id="px-pager"><!-- filled by harness.js --></nav>
 </main>
 
 <footer class="px-footer">mock page for UI preview only — no connection to pixiv.net</footer>
 
-<!-- Harness glue: chrome.* stub + ajax rewrite + mock page rendering. Must load before jQuery/foreground. -->
+<!-- Harness glue: chrome.* stub + fetch rewrite + mock page rendering. Must load before the extension. -->
 <script src="/demo/harness.js"></script>
-<!-- The extension files, in the same order background.js injects them. -->
-<script src="/ext/jquery-3.6.0.min.js"></script>
-<script>window.__harnessPatchJquery();</script>
-<script src="/ext/foreground.js"></script>
+<!-- The extension files, as Chrome would load them: main-world history hook, then the content script. -->
+<script src="/ext/js/pageHook.js"></script>
+<script src="/ext/js/content.js"></script>
 </body>
 </html>
