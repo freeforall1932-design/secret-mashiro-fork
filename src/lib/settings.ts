@@ -2,6 +2,7 @@
 // (sync when available, local otherwise) and change notifications.
 
 import { Emitter } from "./events";
+import { ext } from "./ext";
 import { BUCKETS, type Bucket } from "../popular/buckets";
 
 export type Language = "auto" | "en" | "ja" | "zh-CN";
@@ -157,7 +158,7 @@ type StorageArea = chrome.storage.StorageArea;
 
 function pickArea(): StorageArea | null {
     try {
-        const storage = globalThis.chrome?.storage;
+        const storage = ext()?.storage;
         if (!storage) return null;
         return storage.sync || storage.local || null;
     } catch {
@@ -232,9 +233,11 @@ export class SettingsStore extends Emitter<{ change: SettingChange; load: Settin
 
     private listenForExternalChanges(): void {
         try {
-            chrome.storage.onChanged.addListener((changes, areaName) => {
-                const isOurArea = (areaName === "sync" && this.area === chrome.storage.sync)
-                    || (areaName === "local" && this.area === chrome.storage.local);
+            const storage = ext()?.storage;
+            if (!storage?.onChanged) return;
+            storage.onChanged.addListener((changes, areaName) => {
+                const isOurArea = (areaName === "sync" && this.area === storage.sync)
+                    || (areaName === "local" && this.area === storage.local);
                 if (!isOurArea || !changes[STORAGE_KEY]) return;
                 const incoming = normalizeSettings(changes[STORAGE_KEY].newValue);
                 if (JSON.stringify(incoming) === JSON.stringify(this.current)) return;

@@ -6,16 +6,16 @@
   "homepage_url": "https://github.com/freeforall1932-design/secret-mashiro-fork",
   "minimum_chrome_version": "111",
   "icons": {
-    "16": "images/mashiro.png",
-    "32": "images/mashiro.png",
-    "48": "images/mashiro.png",
+    "16": "images/mashiro-16.png",
+    "32": "images/mashiro-32.png",
+    "48": "images/mashiro-48.png",
     "128": "images/mashiro.png"
   },
   "action": {
     "default_icon": {
-      "16": "images/mashiro.png",
-      "32": "images/mashiro.png",
-      "48": "images/mashiro.png",
+      "16": "images/mashiro-16.png",
+      "32": "images/mashiro-32.png",
+      "48": "images/mashiro-48.png",
       "128": "images/mashiro.png"
     },
     "default_title": "Mashiro — open the Popular panel (on a Pixiv search page)"

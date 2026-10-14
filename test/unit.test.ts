@@ -155,7 +155,16 @@ test("api: response readers tolerate every list key and bad input", () => {
     assert.deepEqual(readPopular({ error: false, body: { popular: { permanent: [item] } } }), { permanent: [item], recent: [] });
     assert.deepEqual(readRecommended({ error: false, body: { illusts: [item] } }), [item]);
     assert.deepEqual(readRecommended({ error: false, body: {} }), []);
-    assert.equal(thumbnailAt(item.url, 540), item.url.replace("/c/250x250_80_a2/", "/c/540x540_70/"));
+    assert.equal(thumbnailAt(item.url, 540), "https://i.pximg.net/c/540x540_70/img-master/img/2024/01/01/00/00/00/1_p0_master1200.jpg");
+    assert.equal(
+        thumbnailAt("https://i.pximg.net/c/250x250_80_a2/custom-thumb/img/2021/03/03/06/29/53/88179809_p0_custom1200.jpg"),
+        "https://i.pximg.net/c/540x540_70/img-master/img/2021/03/03/06/29/53/88179809_p0_master1200.jpg"
+    );
+    assert.equal(
+        thumbnailAt("https://i.pximg.net/c/250x250_80_a2/img-master/img/2019/06/23/17/29/27/75369283_square1200.jpg", 360),
+        "https://i.pximg.net/c/360x360_70/img-master/img/2019/06/23/17/29/27/75369283_master1200.jpg"
+    );
+    assert.equal(thumbnailAt("/thumb/1.svg"), "/thumb/1.svg", "unknown shapes are left alone");
 });
 
 // ---------------------------------------------------------------- filter

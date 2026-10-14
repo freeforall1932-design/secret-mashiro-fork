@@ -289,11 +289,15 @@ export class ResultsGrid {
 
         const img = h("img", {
             class: "mashiro-card-img",
-            src: large ? thumbnailAt(item.url, 360) : item.url,
+            src: large ? thumbnailAt(item.url, 540) : item.url,
             alt: item.alt || item.title || "",
             loading: "lazy",
             decoding: "async"
         });
+        if (img.src !== item.url) {
+            // If the larger variant is missing for some reason, fall back to the list thumbnail.
+            img.addEventListener("error", () => { img.src = item.url; }, { once: true });
+        }
 
         const thumb = h("a", { class: "mashiro-card-thumb", href, target, rel, dataset: { mashiroId: item.id } },
             img,

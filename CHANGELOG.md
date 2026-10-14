@@ -22,6 +22,9 @@ The extension is now the `dist/` folder.
 - English / 日本語 / 简体中文 UI, auto-detected.
 - HTTP 429 handling: pause, countdown, retry (max 3); 403 stops with a message.
 - Toolbar icon action (opens the panel, or a Pixiv search if not on Pixiv).
+- Firefox 128+ build (`dist-firefox/`): same bundles, Firefox manifest (event
+  page, add-on ID, data-collection declaration). APIs go through a tiny
+  `browser ?? chrome` shim, no polyfill.
 - Build (`esbuild`), type-check, unit tests (`node:test`) and jsdom smoke tests
   that run the real bundle against a mock Pixiv (`demo/`). CI builds, tests,
   verifies `dist/` is fresh and uploads a zip.
@@ -37,6 +40,9 @@ The extension is now the `dist/` folder.
   bucket chain when both were available.
 - The second click on **Popular** restores Pixiv's list instead of re-crawling.
 - Popular/recommended works that carry a `users入り` tag are filed under that bucket.
+- Large cards use the 540 px `master1200` thumbnail rebuilt the way
+  PixivBatchDownloader does (also covers `custom-thumb` works), with a fallback
+  to the list thumbnail.
 
 ### Removed
 - jQuery, `foreground.js`, `background.js` injection, `web_accessible_resources`

@@ -7,6 +7,7 @@ import { log } from "../lib/log";
 import { illustrationsTabHref, parsePage, type PageInfo, type SearchPage } from "../lib/pageType";
 import { pageSwitch } from "../lib/pageSwitch";
 import { settings, type SettingChange } from "../lib/settings";
+import { ext } from "../lib/ext";
 import { theme } from "../lib/theme";
 import { toast } from "../lib/toast";
 import { SettingsPanel } from "../panel/panel";
@@ -72,7 +73,7 @@ export class PageController {
         pageSwitch.on("switch", () => this.onNavigate());
         pageSwitch.start();
 
-        chrome.runtime?.onMessage?.addListener((message: { type?: string }) => {
+        ext()?.runtime?.onMessage?.addListener((message: { type?: string }) => {
             if (message?.type === "mashiro:togglePanel") this.panel.toggle();
         });
 

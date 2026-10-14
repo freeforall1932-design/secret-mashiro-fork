@@ -31,25 +31,30 @@ jobs:
       - name: Unit + jsdom smoke tests
         run: npm test
 
-      - name: dist/ is up to date with src/
+      - name: dist/ and dist-firefox/ are up to date with src/
         run: |
-          if [ -n "$(git status --porcelain dist)" ]; then
-            echo "::error::dist/ is stale. Run 'npm run build' and commit the result."
-            git status --porcelain dist
-            git --no-pager diff --stat dist
+          if [ -n "$(git status --porcelain dist dist-firefox)" ]; then
+            echo "::error::dist/ or dist-firefox/ is stale. Run 'npm run build' and commit the result."
+            git status --porcelain dist dist-firefox
+            git --no-pager diff --stat dist dist-firefox
             exit 1
           fi
 
-      - name: Validate manifest
+      - name: Validate manifests
         run: |
           node -e "
-            const m = require('./dist/manifest.json');
+            const fs = require('fs');
             const pkg = require('./package.json');
-            if (m.manifest_version !== 3) throw new Error('manifest_version must be 3');
-            if (m.version !== pkg.version) throw new Error('manifest version ' + m.version + ' != package version ' + pkg.version);
-            for (const cs of m.content_scripts) for (const f of [...(cs.js || []), ...(cs.css || [])]) require('fs').accessSync('dist/' + f);
-            require('fs').accessSync('dist/' + m.background.service_worker);
-            console.log('dist/manifest.json OK (v' + m.version + ')');
+            for (const dir of ['dist', 'dist-firefox']) {
+              const m = JSON.parse(fs.readFileSync(dir + '/manifest.json', 'utf8'));
+              if (m.manifest_version !== 3) throw new Error(dir + ': manifest_version must be 3');
+              if (m.version !== pkg.version) throw new Error(dir + ': manifest version ' + m.version + ' != package version ' + pkg.version);
+              for (const cs of m.content_scripts) for (const f of [...(cs.js || []), ...(cs.css || [])]) fs.accessSync(dir + '/' + f);
+              const bg = m.background.service_worker ? [m.background.service_worker] : m.background.scripts;
+              for (const f of bg) fs.accessSync(dir + '/' + f);
+              if (dir === 'dist-firefox' && !m.browser_specific_settings?.gecko?.id) throw new Error('Firefox manifest needs a gecko id');
+              console.log(dir + '/manifest.json OK (v' + m.version + ')');
+            }
           "
 
       - name: Package

@@ -21,18 +21,39 @@ Pixiv's official popular sort.
 
 Clicking **Popular** again returns to Pixiv's own list; nothing is destroyed.
 
-## Install (Chrome / Chromium / Edge / Brave, Manifest V3)
+## Install
 
-The extension is the **`dist/`** folder (it is committed, no build needed):
+Both builds are committed, so no build step is needed. No developer account, fee or
+"licence" is required to install either one.
 
-1. Download/clone this repository, or grab `mashiro-<version>.zip` from the CI artifacts / Releases.
+### Chrome / Chromium / Edge / Brave (Manifest V3, Chrome 111+)
+
+1. Download/clone this repository, or grab `mashiro-<version>-chrome.zip` from the CI artifacts / Releases.
 2. Open `chrome://extensions`, enable **Developer mode**.
-3. **Load unpacked** → choose the **`dist/`** folder (or unzip the archive and choose that).
+3. **Load unpacked** → choose the **`dist/`** folder (or the unzipped archive).
 4. Open any Pixiv tag search, e.g. <https://www.pixiv.net/tags/オリジナル/illustrations>.
 
-Update: `git pull`, then **Reload** on `chrome://extensions`.
+Update: `git pull`, then **Reload** on `chrome://extensions`. (Publishing to the Chrome Web
+Store is optional and is the only step that costs anything — a one‑time US$5 registration.)
 
-Requires Chrome 111+ (for `"world": "MAIN"` content scripts). Firefox is not supported in 1.0.
+### Firefox (128+)
+
+The Firefox build is **`dist-firefox/`** (same code, Firefox manifest: event‑page background,
+add‑on ID, no‑data‑collection declaration).
+
+*Try it now (unsigned, lasts until Firefox restarts):*
+`about:debugging#/runtime/this-firefox` → **Load Temporary Add-on…** → pick
+`dist-firefox/manifest.json`. If the Popular button does not appear, click the puzzle‑piece
+Extensions button → Mashiro → **Always allow on www.pixiv.net** (Firefox treats host access
+as optional).
+
+*Install permanently:* Firefox (Release) only installs **signed** add‑ons. Signing is free:
+create an account on <https://addons.mozilla.org>, submit `mashiro-<version>-firefox.zip` as
+**self‑distributed / unlisted**, download the signed `.xpi` Mozilla returns and open it in
+Firefox. Alternatively, Firefox Developer Edition, Nightly and ESR let you set
+`xpinstall.signatures.required = false` in `about:config` and install the zip directly.
+
+Not tested on a real Firefox from this repo yet — see "Status" below.
 
 ## Features
 
@@ -55,7 +76,24 @@ Requires Chrome 111+ (for `"world": "MAIN"` content scripts). Firefox is not sup
 - **Self-built result cards** — thumbnail, pages/ugoira/R-18/AI badges, bucket badge,
   title, author with avatar. Compact / regular / large. Follows Pixiv's light/dark theme.
 - **i18n** — English, 日本語, 简体中文, auto-detected from Pixiv's `<html lang>`.
-- Zero dependencies at runtime (no jQuery); only the `storage` permission.
+- Zero dependencies at runtime (no jQuery, no webextension‑polyfill); only the `storage` permission.
+
+## Status / how this was verified
+
+There is no PixivBatchDownloader code or package in this repository — its *patterns* were
+re‑implemented. What was checked:
+
+- Every Pixiv touch point was compared against PBD v19.5.0's source (October 2026):
+  search endpoint and parameters, response keys (`illust` / `illustManga` / `manga`,
+  `popular`), the `/recommend/init` endpoint, the item fields used, the 540 px thumbnail
+  rewrite, the `#gtm-var-theme-kind` theme flag, the SPA `pushState` hook, same‑origin
+  `fetch` with 429/403 handling. The `users入り` probe and bucket crawl are the same
+  requests Mashiro 0.4 made.
+- 22 automated tests run the real `dist/` bundle inside jsdom against a mock Pixiv that
+  answers with those exact response shapes (`npm test`).
+- Not yet done: a click‑through on live Pixiv in Chrome and Firefox. Chrome's
+  `chrome://extensions` → Mashiro → **Errors** and the panel's **Home → Log** show what
+  happened if something is off; please open an issue with that output.
 
 ## Settings
 
@@ -90,7 +128,8 @@ src/
                        grid (results), button (toolbar chip), controller (page lifecycle)
   panel/               settings panel + form controls
   styles/              content.css (+ panel.css)
-dist/                  built extension — load this folder
+dist/                  built extension for Chrome — load this folder
+dist-firefox/          same bundles with the Firefox manifest
 demo/                  mock Pixiv server + harness that runs the real dist/ bundle
 test/                  unit tests (node:test) + jsdom smoke tests against demo/
 ```
@@ -110,14 +149,14 @@ and `GET /ajax/illust/{id}/recommend/init?limit=18`.
 
 ```sh
 npm install
-npm run build     # esbuild → dist/   (npm run watch for rebuild on change)
+npm run build     # esbuild → dist/ + dist-firefox/   (npm run watch for rebuild on change)
 npm run check     # tsc --noEmit
 npm test          # unit tests + jsdom smoke tests (needs a fresh build)
 npm run demo      # mock Pixiv at http://localhost:3000 running the real dist/ bundle
-npm run zip       # mashiro-<version>.zip
+npm run zip       # mashiro-<version>-chrome.zip + mashiro-<version>-firefox.zip
 ```
 
-Commit `dist/` together with `src/` — CI fails if it is stale. TypeScript 5, esbuild, no
+Commit `dist/` and `dist-firefox/` together with `src/` — CI fails if they are stale. TypeScript 5, esbuild, no
 framework. Code style: 4 spaces, double quotes, semicolons.
 
 ### Previewing without Pixiv

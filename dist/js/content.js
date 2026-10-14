@@ -383,6 +383,23 @@
   };
   var pageSwitch = new PageSwitch();
 
+  // src/lib/ext.ts
+  function ext() {
+    const g = globalThis;
+    try {
+      return g.browser?.runtime ? g.browser : g.chrome;
+    } catch {
+      return void 0;
+    }
+  }
+  function assetUrl(path) {
+    try {
+      return ext()?.runtime?.getURL(path) ?? "";
+    } catch {
+      return "";
+    }
+  }
+
   // src/lib/settings.ts
   var DEFAULT_SETTINGS = Object.freeze({
     minBucket: "50",
@@ -471,7 +488,7 @@
   }
   function pickArea() {
     try {
-      const storage = globalThis.chrome?.storage;
+      const storage = ext()?.storage;
       if (!storage) return null;
       return storage.sync || storage.local || null;
     } catch {
@@ -536,8 +553,10 @@
     }
     listenForExternalChanges() {
       try {
-        chrome.storage.onChanged.addListener((changes, areaName) => {
-          const isOurArea = areaName === "sync" && this.area === chrome.storage.sync || areaName === "local" && this.area === chrome.storage.local;
+        const storage = ext()?.storage;
+        if (!storage?.onChanged) return;
+        storage.onChanged.addListener((changes, areaName) => {
+          const isOurArea = areaName === "sync" && this.area === storage.sync || areaName === "local" && this.area === storage.local;
           if (!isOurArea || !changes[STORAGE_KEY]) return;
           const incoming = normalizeSettings(changes[STORAGE_KEY].newValue);
           if (JSON.stringify(incoming) === JSON.stringify(this.current)) return;
@@ -761,8 +780,11 @@
     const list = data && !data.error ? data.body?.illusts : void 0;
     return Array.isArray(list) ? list : [];
   }
-  function thumbnailAt(url, size) {
-    return url.replace(/\/c\/250x250_80_a2\//, `/c/${size}x${size}_70/`);
+  var THUMB_RE = /^(https:\/\/i\.pximg\.net)\/c\/[^/]+\/(?:img-master|custom-thumb)\/img\/(\d{4}\/\d{2}\/\d{2}\/\d{2}\/\d{2}\/\d{2}\/\d+(?:_p\d+)?)_(?:square|custom|master)1200\.(jpg|png|gif)$/;
+  function thumbnailAt(url, size = 540) {
+    const match = THUMB_RE.exec(url);
+    if (!match) return url;
+    return `${match[1]}/c/${size}x${size}_70/img-master/img/${match[2]}_master1200.${match[3]}`;
   }
   async function fetchJson(url, signal) {
     const response = await fetch(url, {
@@ -1435,11 +1457,7 @@
       }
       nav.appendChild(h("div", { class: "mashiro-panel-nav-foot" }, `v${this.host.version}`));
       this.content = h("div", { class: "mashiro-panel-content" });
-      let logoSrc = "";
-      try {
-        logoSrc = chrome.runtime.getURL("images/mashiro.png");
-      } catch {
-      }
+      const logoSrc = assetUrl("images/mashiro.png");
       const windowEl = h(
         "div",
         { class: "mashiro-panel-window", attrs: { role: "dialog", "aria-modal": "true", "aria-label": t("panelTitle") } },
@@ -2165,11 +2183,16 @@
       const large = settings2.cardSize === "large";
       const img = h("img", {
         class: "mashiro-card-img",
-        src: large ? thumbnailAt(item.url, 360) : item.url,
+        src: large ? thumbnailAt(item.url, 540) : item.url,
         alt: item.alt || item.title || "",
         loading: "lazy",
         decoding: "async"
       });
+      if (img.src !== item.url) {
+        img.addEventListener("error", () => {
+          img.src = item.url;
+        }, { once: true });
+      }
       const thumb = h(
         "a",
         { class: "mashiro-card-thumb", href, target, rel, dataset: { mashiroId: item.id } },
@@ -2247,7 +2270,7 @@
       crawler.on("availability", (availability) => this.button.setAvailability(availability));
       pageSwitch.on("switch", () => this.onNavigate());
       pageSwitch.start();
-      chrome.runtime?.onMessage?.addListener((message) => {
+      ext()?.runtime?.onMessage?.addListener((message) => {
         if (message?.type === "mashiro:togglePanel") this.panel.toggle();
       });
       this.watchUi();

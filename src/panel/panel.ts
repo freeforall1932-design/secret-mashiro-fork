@@ -2,6 +2,7 @@
 // panel (header, left navigation, card sections) but built for Mashiro.
 
 import { ICONS, clear, h, icon } from "../lib/dom";
+import { assetUrl } from "../lib/ext";
 import { t } from "../lib/i18n";
 import { log, type LogEntry } from "../lib/log";
 import type { PageInfo } from "../lib/pageType";
@@ -155,12 +156,7 @@ export class SettingsPanel {
 
         this.content = h("div", { class: "mashiro-panel-content" });
 
-        let logoSrc = "";
-        try {
-            logoSrc = chrome.runtime.getURL("images/mashiro.png");
-        } catch {
-            /* no runtime (demo) */
-        }
+        const logoSrc = assetUrl("images/mashiro.png");
 
         const windowEl = h("div", { class: "mashiro-panel-window", attrs: { role: "dialog", "aria-modal": "true", "aria-label": t("panelTitle") } },
             h("header", { class: "mashiro-panel-head" },

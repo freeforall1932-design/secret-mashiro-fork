@@ -47,6 +47,9 @@
   height: 32px;
   border-radius: 8px;
   color: var(--m-orange);
+  object-fit: cover;
+  object-position: center;
+  background: var(--m-surface-2, transparent);
 }
 .mashiro-panel-titles {
   flex: 1;

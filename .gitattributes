@@ -3,3 +3,4 @@
 # Generated bundles: keep diffs readable
 dist/js/*.js linguist-generated=true
 dist/style/*.css linguist-generated=true
+dist-firefox/** linguist-generated=true

@@ -113,9 +113,21 @@ export function readRecommended(data: RecommendResponse | undefined): WorkItem[]
     return Array.isArray(list) ? list : [];
 }
 
-/** Rewrite Pixiv's 250px square thumbnail to a larger square variant. */
-export function thumbnailAt(url: string, size: 360 | 540): string {
-    return url.replace(/\/c\/250x250_80_a2\//, `/c/${size}x${size}_70/`);
+const THUMB_RE = /^(https:\/\/i\.pximg\.net)\/c\/[^/]+\/(?:img-master|custom-thumb)\/img\/(\d{4}\/\d{2}\/\d{2}\/\d{2}\/\d{2}\/\d{2}\/\d+(?:_p\d+)?)_(?:square|custom|master)1200\.(jpg|png|gif)$/;
+
+/**
+ * Larger thumbnail for a work. Pixiv's lists hand out
+ * `/c/250x250_80_a2/img-master/img/<date>/<id>_p0_square1200.jpg` (or the
+ * `custom-thumb/..._custom1200` variant when the author picked a crop).
+ * The 540 px master variant exists for every work, so — like
+ * PixivBatchDownloader's convertThumbURLTo540px — rebuild the URL as
+ * `/c/540x540_70/img-master/img/<date>/<id>_master1200.jpg`.
+ * Unknown shapes are returned unchanged.
+ */
+export function thumbnailAt(url: string, size: 360 | 540 = 540): string {
+    const match = THUMB_RE.exec(url);
+    if (!match) return url;
+    return `${match[1]}/c/${size}x${size}_70/img-master/img/${match[2]}_master1200.${match[3]}`;
 }
 
 /**
