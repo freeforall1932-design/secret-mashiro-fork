@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mashiro UI demo — mock Pixiv search page</title>
+<link rel="icon" href="/ext/images/mashiro.png">
+<link rel="stylesheet" href="/demo/pixiv-mock.css">
+<!-- The real extension stylesheet, exactly as background.js would insertCSS() it. -->
+<link rel="stylesheet" href="/ext/foreground_styles.css">
+</head>
+<body>
+
+<!-- ===== Demo harness (not part of the extension) ===== -->
+<div id="harness">
+    <div class="harness-row">
+        <strong class="harness-title">Mashiro UI demo harness</strong>
+        <span class="harness-hint">mock Pixiv page + real <code>foreground.js</code> / <code>foreground_styles.css</code> (v<span id="harness-version">?</span>)</span>
+        <span class="harness-spacer"></span>
+        <label class="harness-toggle"><input type="checkbox" id="harness-theme"> Pixiv dark theme</label>
+    </div>
+    <div class="harness-row">
+        <span class="harness-label">Scenario (SPA navigation, no reload):</span>
+        <a href="/tags/ゆるゆり/illustrations" data-spa>ゆるゆり → orange (users入り found)</a>
+        <a href="/tags/御坂美琴/illustrations" data-spa>御坂美琴 → blue (alt / recommendations only)</a>
+        <a href="/tags/zzz_no_results/illustrations" data-spa>zzz → grey (nothing)</a>
+        <a href="/tags/ゆるゆり/illustrations?nochip=1">toolbar chip missing → floating button</a>
+    </div>
+    <div class="harness-row">
+        <span class="harness-label">Mock ajax log:</span>
+        <span id="harness-log" class="harness-log">(idle)</span>
+    </div>
+</div>
+
+<!-- ===== Mock Pixiv page ===== -->
+<header class="px-header">
+    <div class="px-header-inner">
+        <a class="px-logo" href="/tags/ゆるゆり/illustrations" data-spa>pixiv</a>
+        <nav class="px-nav">
+            <a href="#">Illustrations</a><a href="#">Manga</a><a href="#">Novels</a>
+        </nav>
+        <div class="charcoal-text-field">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/></svg>
+            <input class="charcoal-text-field-input" type="text" placeholder="Search works" value="" autocomplete="off">
+        </div>
+        <div class="px-header-right">
+            <span class="px-avatar"></span>
+        </div>
+    </div>
+</header>
+
+<main class="px-main">
+    <section class="px-tag-head">
+        <div class="px-tag-cover"></div>
+        <h1 class="px-tag-title">#<span id="px-tag-name">…</span></h1>
+        <p class="px-tag-sub"><span id="px-tag-total">0</span> works</p>
+    </section>
+
+    <div class="px-related">
+        <a class="px-rel-chip" href="#">#百合</a>
+        <a class="px-rel-chip" href="#">#女の子</a>
+        <a class="px-rel-chip" href="#">#オリジナル</a>
+        <a class="px-rel-chip" href="#">#制服</a>
+        <a class="px-rel-chip" href="#">#落書き</a>
+    </div>
+
+    <nav class="px-tabs" aria-label="Work type">
+        <a href="/tags/ゆるゆり/artworks" data-tab="top" data-spa>Top</a>
+        <a href="/tags/ゆるゆり/illustrations" data-tab="illustrations" data-spa>Illustrations</a>
+        <a href="/tags/ゆるゆり/manga" data-tab="manga" data-spa>Manga</a>
+        <a href="#" data-tab="novels">Novels</a>
+        <a href="#" data-tab="users">Users</a>
+    </nav>
+
+    <div class="px-toolbar">
+        <div class="px-toolbar-left">
+            <!-- Mashiro inserts its Popular button right after this chip. -->
+            <button type="button" data-ga4-label="order_filter_chip" class="px-chip flex items-center gap-4 h-32 pr-8 pl-16 py-4 font-bold text-14 rounded-4 cursor-pointer whitespace-nowrap">
+                Newest
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+            </button>
+            <button type="button" class="px-chip flex items-center gap-4 h-32 pr-8 pl-16 py-4 font-bold text-14 rounded-4 cursor-pointer whitespace-nowrap">
+                All works
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+            </button>
+        </div>
+        <div class="px-toolbar-right">
+            <span class="px-premium">Sort by popularity <span class="px-crown">👑</span></span>
+            <button type="button" class="px-chip px-chip-ghost flex items-center gap-4 h-32 pr-8 pl-16 py-4 font-bold text-14 rounded-4 cursor-pointer whitespace-nowrap">Search options</button>
+        </div>
+    </div>
+
+    <section data-ga4-label="works_content" class="px-works">
+        <div class="px-works-head">Works <span class="px-count" id="px-works-count">0</span></div>
+        <div class="px-native-grid" id="px-native-grid"><!-- filled by harness.js --></div>
+    </section>
+    <!-- #inj-container is inserted here by foreground.js (as a sibling of works_content) -->
+
+    <nav class="px-pager" aria-label="Pagination" id="px-pager"><!-- filled by harness.js --></nav>
+</main>
+
+<footer class="px-footer">mock page for UI preview only — no connection to pixiv.net</footer>
+
+<!-- Harness glue: chrome.* stub + ajax rewrite + mock page rendering. Must load before jQuery/foreground. -->
+<script src="/demo/harness.js"></script>
+<!-- The extension files, in the same order background.js injects them. -->
+<script src="/ext/jquery-3.6.0.min.js"></script>
+<script>window.__harnessPatchJquery();</script>
+<script src="/ext/foreground.js"></script>
+</body>
+</html>

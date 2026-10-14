@@ -59,6 +59,20 @@ selectors at the top of `foreground.js` (`SORT_CHIP_SELECTORS`,
 `WORKS_CONTENT_SELECTORS`, `SEARCHBOX_SELECTOR`) are the first thing to extend.
 Keep the self-built cards — do not go back to cloning Pixiv DOM nodes.
 
+## Previewing the UI without Pixiv
+
+`demo/` contains a mock Pixiv search page that runs the real `foreground.js` and
+`foreground_styles.css` against fake ajax endpoints:
+
+```sh
+node demo/server.js   # then open http://localhost:3000
+```
+
+It demonstrates the orange / blue / grey button states, the self-built result
+grid, SPA navigation and the floating-button fallback. See
+[`demo/README.md`](demo/README.md). The folder is ignored by Chrome when the
+repo root is loaded unpacked.
+
 ## Guide
 
 - Button turns **orange** if results from normal (`users入り`) search are available
