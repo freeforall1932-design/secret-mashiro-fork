@@ -1,117 +1,183 @@
-# ![icon](images/mashiro.png) Mashiro — maintained fork
+# ![icon](src/static/images/mashiro.png) Mashiro — Popular mode for Pixiv search
 
-> **Fork of [kokseen1/Mashiro](https://github.com/kokseen1/Mashiro)** — the original was
-> abandoned (last upstream commit: July 2024). This fork keeps it working and is the
-> actively maintained continuation.
+> Maintained fork of [kokseen1/Mashiro](https://github.com/kokseen1/Mashiro) (abandoned
+> July 2024). Version 1.0.0 is a ground-up rewrite that borrows the architecture of
+> [PixivBatchDownloader](https://github.com/xuejianxianzun/PixivBatchDownloader) — the
+> only Pixiv extension that has kept working through every redesign — while keeping
+> Mashiro's own idea and its public-domain licence.
 
-Mashiro is a Chrome extension that sorts illustrations and manga by popularity on Pixiv.
+Mashiro adds a **Popular** button to Pixiv tag searches. Clicking it replaces Pixiv's
+date-ordered list with the works that bookmarkers tagged `100000users入り`, `50000users入り`,
+… `50users入り` — highest first. That approximates Premium's *sort by popularity* without
+Premium. It is not 100 % accurate (it depends on community tags), and it never touches
+Pixiv's official popular sort.
 
-It works by looking for the tag with the suffix `users入り` that is automatically applied
-on posts that surpass a certain amount of likes. This extension does not enable the
-official `Sort by popularity` mode, and thus will not have 100% accurate results.
+| Button | Meaning |
+|---|---|
+| **Orange** | `users入り` works exist for this search. Click → Popular grid. |
+| **Blue** | None tagged, but Pixiv's own *popular* strip and its recommendations are available. |
+| **Grey** | Nothing to show. |
+| Pulsing | Still checking. |
 
-## What changed vs. the abandoned original
+Clicking **Popular** again returns to Pixiv's own list; nothing is destroyed.
 
-The upstream extension broke as Pixiv updated its markup (hashed `sc-*` CSS classes
-change with every deploy). Cloning Pixiv's own thumbnail nodes then failed the same
-way — the Popular button and result counter moved, but the posts themselves stayed
-blank ([kokseen1/Mashiro#23](https://github.com/kokseen1/Mashiro/issues/23)).
+## Install
 
-This fork no longer depends on Pixiv's React tree for rendering:
+Both builds are committed, so no build step is needed. No developer account, fee or
+"licence" is required to install either one.
 
-- **Self-built cards** — Mashiro draws its own thumbnail, title, and author cells.
-  Pixiv class-name churn cannot empty the grid.
-- **Own results container** — injected as a *sibling* of Pixiv's works area
-  (`[data-ga4-label="works_content"]`). React-managed subtrees are not rewritten.
-- **2026 Pixiv anchors** — the Popular button attaches to
-  `[data-ga4-label="order_filter_chip"]` and the charcoal search field, with
-  semantic fallbacks. If the toolbar chip is missing, a floating Popular button
-  still appears.
-- **SPA-aware injection** — Pixiv tag switches do not require a full reload.
-  In-flight requests abort on navigation so they cannot 403-cascade.
-- **Throttled, sequential fetches** — popularity buckets are requested one at a
-  time with a short gap, instead of firing nine recursive searches at once.
-- **Null-safe API handling** — JSON envelopes and nested lists are checked
-  before use; 403/429 stops the run instead of retry-storming.
-- **CI validation** — every push/PR checks that `manifest.json` is Manifest V3,
-  every root `*.js` file parses, and the extension files are present.
+### Chrome / Chromium / Edge / Brave (Manifest V3, Chrome 111+)
 
-## Demo
+1. Download/clone this repository, or grab `mashiro-<version>-chrome.zip` from the CI artifacts / Releases.
+2. Open `chrome://extensions`, enable **Developer mode**.
+3. **Load unpacked** → choose the **`dist/`** folder (or the unzipped archive).
+4. Open any Pixiv tag search, e.g. <https://www.pixiv.net/tags/オリジナル/illustrations>.
 
-![demo](images/demo.gif)
+Update: `git pull`, then **Reload** on `chrome://extensions`. (Publishing to the Chrome Web
+Store is optional and is the only step that costs anything — a one‑time US$5 registration.)
 
-## Installation
+### Firefox (140+, Android 142+)
 
-1. Clone this repository (the repo root **is** the extension)
-2. Visit `chrome://extensions` in Chrome
-3. Turn on Developer mode
-4. Click `Load unpacked`
-5. Select this repository's root folder
+The Firefox build is **`dist-firefox/`** (same code, Firefox manifest: event‑page background,
+add‑on ID, no‑data‑collection declaration).
 
-## How to update
+*Try it now (unsigned, lasts until Firefox restarts):*
+`about:debugging#/runtime/this-firefox` → **Load Temporary Add-on…** → pick
+`dist-firefox/manifest.json`. If the Popular button does not appear, click the puzzle‑piece
+Extensions button → Mashiro → **Always allow on www.pixiv.net** (Firefox treats host access
+as optional).
 
-1. `git pull` the latest `main` (or download the newest release zip)
-2. Open `chrome://extensions`
-3. Click **Reload** on Mashiro
+*Install permanently:* Firefox (Release) only installs **signed** add‑ons. Signing is free:
+create an account on <https://addons.mozilla.org>, submit `mashiro-<version>-firefox.zip` as
+**self‑distributed / unlisted**, download the signed `.xpi` Mozilla returns and open it in
+Firefox. Alternatively, Firefox Developer Edition, Nightly and ESR let you set
+`xpinstall.signatures.required = false` in `about:config` and install the zip directly.
 
-If Popular stops appearing or the grid is empty after a Pixiv redesign, the
-selectors at the top of `foreground.js` (`SORT_CHIP_SELECTORS`,
-`WORKS_CONTENT_SELECTORS`, `SEARCHBOX_SELECTOR`) are the first thing to extend.
-Keep the self-built cards — do not go back to cloning Pixiv DOM nodes.
+Not tested on a real Firefox from this repo yet — see "Status" below.
 
-## Guide
+## Features
 
-- Button turns **orange** if results from normal (`users入り`) search are available
-- Otherwise, button turns **blue** if only alternative results are available
-- **Grey** button means no results are available
-- The number next to Popular is how many posts Mashiro has placed in the grid
+- **Works on every search tab** — `/tags/X` (Top), `/tags/X/artworks`, `/illustrations`,
+  `/manga`, locale-prefixed URLs (`/en/tags/…`) and the legacy `/search?q=…`.
+  On the Top tab the button opens the Illustrations tab in Popular mode.
+- **Follows Pixiv's SPA navigation** — a tiny main-world hook mirrors `history.pushState`;
+  switching tags re-probes instantly and aborts in-flight requests.
+- **Polite, prioritised request queue** — one request at a time, a configurable gap,
+  buckets before Pixiv's popular list before recommendations. HTTP 429 pauses with a
+  countdown and retries; 403 stops with a clear message. (v0.4 fired nine recursive
+  searches at once and starved itself with recommendation requests.)
+- **Settings panel** — gear button next to Popular, or click the toolbar icon. Floating
+  panel in the PixivBatchDownloader style with Home (status, progress, live log,
+  Start/Stop/Clear), Search, Filters, Display, General and Help. Settings sync via
+  `chrome.storage.sync`.
+- **Filters** — hide R-18 / R-18G / AI-generated / ugoira, exclude tags, minimum page
+  count, date range. Page filters from Pixiv's own URL (`mode`, `scd`/`ecd`, `ratio`,
+  `ai_type`, …) are forwarded to the bucket searches.
+- **Self-built result cards** — thumbnail, pages/ugoira/R-18/AI badges, bucket badge,
+  title, author with avatar. Compact / regular / large. Follows Pixiv's light/dark theme.
+- **i18n** — English, 日本語, 简体中文, auto-detected from Pixiv's `<html lang>`.
+- Zero dependencies at runtime (no jQuery, no webextension‑polyfill); only the `storage` permission.
 
-## Usage Notes
+## Status / how this was verified
 
-- Works best with official Pixiv series tags used by artists. (orange + blue mode)
-  - Examples:
-    - `エヴァ` instead of `エヴァンゲリオン`
-    - `SAO` instead of `ソードアート・オンライン`
-- Most character tags are supported! (blue mode)
-  - Examples:
-    - `歳納京子`
-    - `御坂美琴`
-- Works well with popular generic tags.
-  - Examples:
-    - `オリジナル`
-    - `風景`
-- Only Illustrations and Manga are currently supported.
+There is no PixivBatchDownloader code or package in this repository — its *patterns* were
+re‑implemented. What was checked:
 
-## Changelog
+- Every Pixiv touch point was compared against PBD v19.5.0's source (October 2026):
+  search endpoint and parameters, response keys (`illust` / `illustManga` / `manga`,
+  `popular`), the `/recommend/init` endpoint, the item fields used, the 540 px thumbnail
+  rewrite, the `#gtm-var-theme-kind` theme flag, the SPA `pushState` hook, same‑origin
+  `fetch` with 429/403 handling. The `users入り` probe and bucket crawl are the same
+  requests Mashiro 0.4 made.
+- 23 automated tests run the real `dist/` bundle inside jsdom against a mock Pixiv that
+  answers with those exact response shapes (`npm test`).
+- Not yet done: a click‑through on live Pixiv in Chrome and Firefox. Chrome's
+  `chrome://extensions` → Mashiro → **Errors** and the panel's **Home → Log** show what
+  happened if something is off; please open an issue with that output.
 
-### 0.4.0
+## Settings
 
-- Render popular results with Mashiro-owned cards and CSS (fixes blank-grid
-  breakage after Pixiv markup changes).
-- Attach to current `data-ga4-label` / charcoal search UI; float Popular if
-  the toolbar chip is gone.
-- Follow Pixiv SPA navigations; abort outstanding ajax on route change.
-- Serialize and throttle Pixiv ajax to avoid 403/429 cascades.
-- Space-separate the `users入り` term so custom keyword searches AND correctly.
-- Remove the previous global `[class*="sc-"]` style rule, which could distort
-  Pixiv's own layout.
+| Section | Setting | Default |
+|---|---|---|
+| Search | Lowest bucket to include (`50` = everything) | `50` |
+| | Max works | `1000` |
+| | Pages per bucket (60 works each) | `3` |
+| | Gap between requests | `500 ms` |
+| | Order inside a bucket | newest first |
+| | Check availability on page load (the probe request) | on |
+| | Pixiv popular list + recommendations: auto / always / off | auto (when buckets yield < 30 works) |
+| | Recommendation depth | `1` |
+| | Inherit filters from the page URL | on |
+| | Wait after HTTP 429 | `60 s` |
+| Filters | Hide R-18 / R-18G / AI / ugoira, exclude tags, min pages, date range | all off |
+| Display | Card size, bucket headers, bucket badge, author, open in new tab | regular / on / on / on / off |
+| General | Auto-start Popular mode on search pages, show gear button, language, theme | off / on / auto / auto |
 
-### 0.3.0
+## How it works
 
-- Flatten the extension to the repository root so Chrome can load it unpacked.
-- First hardening pass (semantic selector fallbacks, null-safe DOM/API access).
-- CI workflow that validates the unpacked extension.
+```
+src/
+  manifest.json        MV3 manifest (version is stamped from package.json at build time)
+  pageHook.ts          main-world: wraps pushState/replaceState → "mashiro:navigate" events
+  content.ts           isolated world entry → PageController
+  background.ts        service worker: toolbar icon toggles the panel
+  lib/                 api (fetch + URL builders), requestQueue (priority, pacing, 429),
+                       pageType (URL → search/tab/apiPath), settings (chrome.storage),
+                       i18n + langText, theme, dom helpers, toast, log, events
+  popular/             buckets (users入り helpers), filter, crawler (phases),
+                       grid (results), button (toolbar chip), controller (page lifecycle)
+  panel/               settings panel + form controls
+  styles/              content.css (+ panel.css)
+dist/                  built extension for Chrome — load this folder
+dist-firefox/          same bundles with the Firefox manifest
+demo/                  mock Pixiv server + harness that runs the real dist/ bundle
+test/                  unit tests (node:test) + jsdom smoke tests against demo/
+```
 
-## Roadmap
+Flow: `PageController` parses the URL → mounts the Popular chip next to Pixiv's sort chip
+(`[data-ga4-label="order_filter_chip"]`, floating fallback) → `crawler.probe()` sends one
+search for `"<word> users入り"` (partial match hits every bucket) → colour. On click
+`crawler.start()` walks buckets highest-first through the `RequestQueue`, each work goes
+through `checkWork()` and into the `ResultsGrid` as it arrives; if buckets yield little,
+Pixiv's `popular.permanent/recent` and `/ajax/illust/:id/recommend/init` fill in.
 
-- Optional result-limit / date-range controls
-- Novel search support
-- A packaged Chrome Web Store / GitHub Release zip
+Pixiv API endpoints used (same as Pixiv's own frontend, same-origin cookies):
+`GET /ajax/search/{artworks|illustrations|manga}/{word}?word=…&order=date_d&mode=all&p=…&s_mode=s_tag&type=…`
+and `GET /ajax/illust/{id}/recommend/init?limit=18`.
 
-## License
+## Development
 
-Released into the public domain under [The Unlicense](LICENSE). Upstream credit:
-[kokseen1/Mashiro](https://github.com/kokseen1/Mashiro) (abandoned).
+```sh
+npm install
+npm run build     # esbuild → dist/ + dist-firefox/   (npm run watch for rebuild on change)
+npm run check     # tsc --noEmit
+npm test          # unit tests + jsdom smoke tests (needs a fresh build)
+npm run demo      # mock Pixiv at http://localhost:3000 running the real dist/ bundle
+npm run zip       # mashiro-<version>-chrome.zip + mashiro-<version>-firefox.zip
+```
 
-2026 Pixiv selector and “don't clone React nodes” approach was informed by the
-also-Unlicensed [annoft/Mashiro](https://github.com/annoft/Mashiro) personal fork.
+Commit `dist/` and `dist-firefox/` together with `src/` — CI fails if they are stale. TypeScript 5, esbuild, no
+framework. Code style: 4 spaces, double quotes, semicolons.
+
+### Previewing without Pixiv
+
+`demo/` is a mock Pixiv search page plus fake `/ajax/...` endpoints. It loads the real
+`dist/js/pageHook.js`, `dist/js/content.js` and `dist/style/content.css`, so what you
+see is the extension. Scenarios: orange (`ゆるゆり`), blue (`御坂美琴`), grey
+(`zzz_no_results`), a 429 once (`ratelimit_test`), slow Pixiv (`slow_pixiv`), Top tab,
+missing sort chip, dark theme. See [`demo/README.md`](demo/README.md).
+
+### If Pixiv changes its markup
+
+Everything that touches Pixiv's DOM is in `src/popular/button.ts` (where the chip is
+mounted) and `src/popular/grid.ts` (where the results container goes, next to
+`[data-ga4-label="works_content"]`). Cards are self-built, so class-name churn cannot
+blank the grid; worst case the button floats at the top-right.
+
+## Credits & licence
+
+Original idea and name: [kokseen1/Mashiro](https://github.com/kokseen1/Mashiro).
+Architecture patterns (fetch layer, SPA hook, page-type detection, theme following,
+floating settings panel) are re-implemented from
+[PixivBatchDownloader](https://github.com/xuejianxianzun/PixivBatchDownloader); no code was
+copied, so this repository stays under [The Unlicense](LICENSE).

@@ -1,0 +1,468 @@
+/* Mashiro — content styles. Everything is scoped under .mashiro-root or an
+   id so nothing leaks into Pixiv. Never target Pixiv's hashed sc-* classes. */
+
+@import "./panel.css";
+
+.mashiro-root {
+    --m-accent: #0096fa;
+    --m-orange: #fd9e16;
+    --m-blue: #0096fa;
+    --m-green: #2eaf5a;
+    --m-red: #e5484d;
+    --m-yellow: #d9a400;
+    --m-grey: #9a9a9a;
+
+    --m-bg: #ffffff;
+    --m-bg-2: #f4f6f8;
+    --m-bg-3: #e9edf1;
+    --m-text: #1f1f1f;
+    --m-text-2: #6f6f6f;
+    --m-text-3: #a3a3a3;
+    --m-border: rgba(0, 0, 0, 0.1);
+    --m-hover: rgba(0, 0, 0, 0.06);
+    --m-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    --m-thumb: rgba(128, 128, 128, 0.16);
+    --m-badge-bg: rgba(0, 0, 0, 0.6);
+    --m-accent-soft: rgba(0, 150, 250, 0.12);
+
+    --m-card: 184px;
+    --m-radius: 8px;
+
+    color: var(--m-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Noto Sans CJK JP", "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+
+.mashiro-root *,
+.mashiro-root *::before,
+.mashiro-root *::after {
+    box-sizing: inherit;
+}
+
+html.mashiro-dark .mashiro-root {
+    --m-bg: #1f1f1f;
+    --m-bg-2: #272727;
+    --m-bg-3: #333333;
+    --m-text: #f0f0f0;
+    --m-text-2: #a8a8a8;
+    --m-text-3: #6f6f6f;
+    --m-border: rgba(255, 255, 255, 0.12);
+    --m-hover: rgba(255, 255, 255, 0.08);
+    --m-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+    --m-thumb: rgba(255, 255, 255, 0.08);
+    --m-accent-soft: rgba(0, 150, 250, 0.2);
+}
+
+.mashiro-root a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.mashiro-root button {
+    font: inherit;
+    color: inherit;
+}
+
+/* ---------- toolbar chips (Popular + gear) ---------- */
+
+.mashiro-toolbar {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    vertical-align: middle;
+    margin-left: 4px;
+}
+
+.mashiro-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 10px 0 14px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--m-grey);
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.mashiro-chip:hover {
+    background: var(--m-hover);
+}
+
+.mashiro-chip:focus-visible {
+    outline: 2px solid var(--m-accent);
+    outline-offset: 2px;
+}
+
+.mashiro-gear {
+    padding: 0 6px;
+    color: var(--m-text-2);
+}
+
+.mashiro-popular.is-orange { color: var(--m-orange); }
+.mashiro-popular.is-blue { color: var(--m-blue); }
+.mashiro-popular.is-grey { color: var(--m-grey); }
+.mashiro-popular.is-probing { color: var(--m-grey); opacity: 0.8; }
+
+.mashiro-popular.is-active {
+    background: var(--m-accent-soft);
+}
+
+.mashiro-popular.is-active.is-orange { background: rgba(253, 158, 22, 0.16); }
+
+.mashiro-popular-count:empty { display: none; }
+
+.mashiro-popular-count {
+    font-size: 12px;
+    font-weight: 700;
+    opacity: 0.85;
+}
+
+.mashiro-spinner {
+    display: none;
+    width: 12px;
+    height: 12px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: mashiro-spin 0.8s linear infinite;
+}
+
+.mashiro-popular.is-busy .mashiro-spinner { display: inline-block; }
+
+@keyframes mashiro-spin {
+    to { transform: rotate(360deg); }
+}
+
+.mashiro-toolbar.is-floating {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 2147483000;
+    padding: 4px;
+    border-radius: 999px;
+    background: var(--m-bg);
+    box-shadow: var(--m-shadow);
+}
+
+.mashiro-toolbar.is-floating .mashiro-chip {
+    border-radius: 999px;
+}
+
+/* ---------- results view ---------- */
+
+.mashiro-results {
+    display: none;
+    width: 100%;
+    margin: 8px 0 32px;
+}
+
+.mashiro-results.is-active {
+    display: block;
+}
+
+/* Hide Pixiv's own list + pager while Popular mode is showing. */
+body.mashiro-active [data-ga4-label="works_content"] > :not(:first-child),
+body.mashiro-active [data-ga4-label="works_content"] ul,
+body.mashiro-active .mashiro-native-grid,
+body.mashiro-active nav.mashiro-native-pagination {
+    display: none !important;
+}
+
+.mashiro-results-head {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 10px 12px 12px;
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius);
+    background: var(--m-bg-2);
+    overflow: hidden;
+}
+
+.mashiro-results-headline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.mashiro-results-icon { color: var(--m-orange); }
+
+.mashiro-results-count {
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--m-bg-3);
+    color: var(--m-text-2);
+    font-size: 12px;
+}
+
+.mashiro-results-count:empty { display: none; }
+
+.mashiro-results-status {
+    flex: 1;
+    min-width: 200px;
+    color: var(--m-text-2);
+    font-size: 13px;
+}
+
+.mashiro-results.is-error .mashiro-results-status { color: var(--m-red); }
+
+.mashiro-results-actions {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.mashiro-results-track {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: transparent;
+}
+
+.mashiro-results-bar {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--m-accent);
+    transition: width 0.3s ease;
+}
+
+.mashiro-results.is-running .mashiro-results-bar {
+    background-image: linear-gradient(90deg, var(--m-accent), var(--m-orange), var(--m-accent));
+    background-size: 200% 100%;
+    animation: mashiro-shimmer 1.6s linear infinite;
+}
+
+@keyframes mashiro-shimmer {
+    to { background-position: -200% 0; }
+}
+
+.mashiro-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--m-text-2);
+    cursor: pointer;
+}
+
+.mashiro-icon-button:hover { background: var(--m-hover); color: var(--m-text); }
+.mashiro-icon-button[hidden] { display: none; }
+
+.mashiro-results-empty {
+    display: none;
+    margin: 24px 0;
+    color: var(--m-text-2);
+    text-align: center;
+}
+
+.mashiro-results-empty.is-visible { display: block; }
+
+/* sections */
+
+.mashiro-section { margin-top: 20px; }
+
+.mashiro-section-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.mashiro-results.hide-headers .mashiro-section-head { display: none; }
+.mashiro-results.hide-headers .mashiro-section { margin-top: 24px; }
+
+.mashiro-section-count {
+    color: var(--m-text-3);
+    font-weight: 400;
+    font-size: 13px;
+}
+
+.mashiro-bucket-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--m-orange);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 18px;
+}
+
+.mashiro-bucket-pill.is-alt { background: var(--m-blue); }
+
+/* cards */
+
+.mashiro-grid {
+    display: grid;
+    gap: 24px 16px;
+    grid-template-columns: repeat(auto-fill, minmax(var(--m-card), 1fr));
+}
+
+.mashiro-results[data-card-size="compact"] { --m-card: 136px; }
+.mashiro-results[data-card-size="regular"] { --m-card: 184px; }
+.mashiro-results[data-card-size="large"] { --m-card: 240px; }
+
+.mashiro-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.mashiro-card-thumb {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--m-thumb);
+}
+
+.mashiro-card-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+.mashiro-card-thumb:hover .mashiro-card-img { transform: scale(1.03); }
+
+.mashiro-card-pages,
+.mashiro-card-r18,
+.mashiro-card-ai,
+.mashiro-card-ugoira,
+.mashiro-card-bucket {
+    position: absolute;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: var(--m-badge-bg);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.2;
+    pointer-events: none;
+}
+
+.mashiro-card-pages { top: 4px; right: 4px; }
+.mashiro-card-r18 { top: 4px; left: 4px; background: var(--m-red); }
+.mashiro-card-ai { bottom: 4px; right: 4px; background: rgba(90, 60, 200, 0.85); }
+.mashiro-card-ugoira { top: 4px; right: 4px; }
+/* DOM order is ugoira-then-pages; shift the page badge left when both show. */
+.mashiro-card-ugoira ~ .mashiro-card-pages { right: 34px; }
+.mashiro-card-bucket { bottom: 4px; left: 4px; background: rgba(253, 158, 22, 0.92); }
+
+.mashiro-results.hide-badge .mashiro-card-bucket { display: none; }
+
+.mashiro-card-title {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mashiro-card-title:hover { text-decoration: underline; }
+
+.mashiro-card-author {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--m-text-2);
+    overflow: hidden;
+}
+
+.mashiro-card-author span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mashiro-card-author:hover span { text-decoration: underline; }
+
+.mashiro-results.hide-author .mashiro-card-author { display: none; }
+
+.mashiro-card-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    object-fit: cover;
+}
+
+/* ---------- toasts ---------- */
+
+#mashiro-toasts {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    z-index: 2147483001;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+.mashiro-toast {
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: rgba(32, 32, 32, 0.94);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: var(--m-shadow);
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.mashiro-toast.mashiro-toast-in { opacity: 1; transform: translateY(0); }
+.mashiro-toast-success { background: rgba(46, 175, 90, 0.95); }
+.mashiro-toast-warning { background: rgba(217, 164, 0, 0.95); }
+.mashiro-toast-error { background: rgba(229, 72, 77, 0.95); }
+
+/* ---------- shared bits ---------- */
+
+.mashiro-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 6px;
+    border-radius: 50%;
+    background: var(--m-grey);
+    vertical-align: middle;
+}
+
+.mashiro-dot.is-orange { background: var(--m-orange); }
+.mashiro-dot.is-blue { background: var(--m-blue); }
+.mashiro-dot.is-grey { background: var(--m-grey); }
+.mashiro-dot.is-probing { background: var(--m-yellow); }
+.mashiro-dot.is-unknown { background: var(--m-text-3); }

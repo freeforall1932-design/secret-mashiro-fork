@@ -19,3 +19,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Test bundles (built by `npm test`)
+test/build/

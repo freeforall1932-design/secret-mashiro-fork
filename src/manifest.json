@@ -1,0 +1,71 @@
+{
+  "manifest_version": 3,
+  "name": "Mashiro",
+  "version": "0.0.0",
+  "description": "Popular mode for Pixiv search: sort illustrations and manga by popularity without Premium. Maintained fork of kokseen1/Mashiro.",
+  "homepage_url": "https://github.com/freeforall1932-design/secret-mashiro-fork",
+  "minimum_chrome_version": "111",
+  "icons": {
+    "16": "images/mashiro-16.png",
+    "32": "images/mashiro-32.png",
+    "48": "images/mashiro-48.png",
+    "128": "images/mashiro.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "images/mashiro-16.png",
+      "32": "images/mashiro-32.png",
+      "48": "images/mashiro-48.png",
+      "128": "images/mashiro.png"
+    },
+    "default_title": "Mashiro — open the Popular panel (on a Pixiv search page)"
+  },
+  "background": {
+    "service_worker": "js/background.js"
+  },
+  "permissions": [
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.pixiv.net/*"
+      ],
+      "exclude_matches": [
+        "https://www.pixiv.net/ajax/*",
+        "https://www.pixiv.net/rpc/*"
+      ],
+      "js": [
+        "js/pageHook.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://www.pixiv.net/*"
+      ],
+      "exclude_matches": [
+        "https://www.pixiv.net/ajax/*",
+        "https://www.pixiv.net/rpc/*"
+      ],
+      "js": [
+        "js/content.js"
+      ],
+      "css": [
+        "style/content.css"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "images/mashiro.png"
+      ],
+      "matches": [
+        "https://www.pixiv.net/*"
+      ]
+    }
+  ]
+}
