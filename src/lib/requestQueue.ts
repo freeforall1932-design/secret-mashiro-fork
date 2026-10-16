@@ -41,6 +41,7 @@ export class RequestQueue extends Emitter<QueueEvents> {
     private jobs: Job<unknown>[] = [];
     private seq = 0;
     private active = false;
+    private activeJob: Job<unknown> | null = null;
     private paused = false;
     private gapTimer: number | null = null;
     private retryTimer: number | null = null;
@@ -77,11 +78,19 @@ export class RequestQueue extends Emitter<QueueEvents> {
         const dropped = this.jobs;
         this.jobs = [];
         for (const job of dropped) job.reject(new QueueAbortedError());
-        this.controller?.abort();
+        // Release the in-flight slot *before* aborting: the aborted fetch only
+        // rejects on a later microtask, and a job enqueued in the meantime
+        // (Stop → Start, navigation → probe) must be able to run immediately.
+        // The stale fetch handlers recognise their job via `activeJob` and
+        // leave the new job's state alone.
+        const controller = this.controller;
         this.controller = null;
+        this.active = false;
+        this.activeJob = null;
         this.paused = false;
         this.rateLimitRetries = 0;
         this.clearTimers();
+        controller?.abort();
     }
 
     resetCounters(): void {
@@ -103,19 +112,37 @@ export class RequestQueue extends Emitter<QueueEvents> {
         if (this.active || this.paused || this.gapTimer !== null || !this.jobs.length) return;
         const job = this.jobs.shift()!;
         this.active = true;
+        this.activeJob = job;
         this.controller = new AbortController();
         const started = Date.now();
 
         fetchJson(job.url, this.controller.signal).then(
             (data) => {
+                // Superseded by clear(): settle the promise but do not touch
+                // the state of whatever job replaced this one.
+                if (this.activeJob !== job) {
+                    job.resolve(data);
+                    return;
+                }
                 this.rateLimitRetries = 0;
                 this.finish(job, started, true, undefined);
                 job.resolve(data);
             },
             (err: unknown) => {
                 if (err instanceof DOMException && err.name === "AbortError") {
-                    this.active = false;
-                    job.reject(new QueueAbortedError());
+                    if (this.activeJob === job) {
+                        this.activeJob = null;
+                        this.active = false;
+                        this.controller = null;
+                        job.reject(new QueueAbortedError());
+                        this.pump();
+                    } else {
+                        job.reject(new QueueAbortedError());
+                    }
+                    return;
+                }
+                if (this.activeJob !== job) {
+                    job.reject(err);
                     return;
                 }
                 const status = err instanceof ApiError ? err.status : undefined;
@@ -124,6 +151,8 @@ export class RequestQueue extends Emitter<QueueEvents> {
                     this.rateLimitRetries++;
                     this.jobs.unshift(job);
                     this.active = false;
+                    this.activeJob = null;
+                    this.controller = null;
                     this.emit("request", { url: job.url, ok: false, status, durationMs: Date.now() - started });
                     this.pauseForRateLimit(status);
                     return;
@@ -136,6 +165,7 @@ export class RequestQueue extends Emitter<QueueEvents> {
 
     private finish(job: Job<unknown>, started: number, ok: boolean, status: number | undefined): void {
         this.active = false;
+        this.activeJob = null;
         this.controller = null;
         this.completedCount++;
         this.emit("request", { url: job.url, ok, status, durationMs: Date.now() - started });

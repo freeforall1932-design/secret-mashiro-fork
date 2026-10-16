@@ -36,7 +36,7 @@ Both builds are committed, so no build step is needed. No developer account, fee
 Update: `git pull`, then **Reload** on `chrome://extensions`. (Publishing to the Chrome Web
 Store is optional and is the only step that costs anything — a one‑time US$5 registration.)
 
-### Firefox (128+)
+### Firefox (140+, Android 142+)
 
 The Firefox build is **`dist-firefox/`** (same code, Firefox manifest: event‑page background,
 add‑on ID, no‑data‑collection declaration).
@@ -89,7 +89,7 @@ re‑implemented. What was checked:
   rewrite, the `#gtm-var-theme-kind` theme flag, the SPA `pushState` hook, same‑origin
   `fetch` with 429/403 handling. The `users入り` probe and bucket crawl are the same
   requests Mashiro 0.4 made.
-- 22 automated tests run the real `dist/` bundle inside jsdom against a mock Pixiv that
+- 23 automated tests run the real `dist/` bundle inside jsdom against a mock Pixiv that
   answers with those exact response shapes (`npm test`).
 - Not yet done: a click‑through on live Pixiv in Chrome and Firefox. Chrome's
   `chrome://extensions` → Mashiro → **Errors** and the panel's **Home → Log** show what

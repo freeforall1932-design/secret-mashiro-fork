@@ -49,7 +49,7 @@
   color: var(--m-orange);
   object-fit: cover;
   object-position: center;
-  background: var(--m-surface-2, transparent);
+  background: var(--m-bg-3);
 }
 .mashiro-panel-titles {
   flex: 1;
@@ -858,7 +858,7 @@ body.mashiro-active nav.mashiro-native-pagination {
   top: 4px;
   right: 4px;
 }
-.mashiro-card-pages ~ .mashiro-card-ugoira {
+.mashiro-card-ugoira ~ .mashiro-card-pages {
   right: 34px;
 }
 .mashiro-card-bucket {

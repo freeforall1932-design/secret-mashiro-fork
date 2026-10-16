@@ -22,7 +22,7 @@ The extension is now the `dist/` folder.
 - English / 日本語 / 简体中文 UI, auto-detected.
 - HTTP 429 handling: pause, countdown, retry (max 3); 403 stops with a message.
 - Toolbar icon action (opens the panel, or a Pixiv search if not on Pixiv).
-- Firefox 128+ build (`dist-firefox/`): same bundles, Firefox manifest (event
+- Firefox 140+ build (`dist-firefox/`, Android 142+): same bundles, Firefox manifest (event
   page, add-on ID, data-collection declaration). APIs go through a tiny
   `browser ?? chrome` shim, no polyfill.
 - Build (`esbuild`), type-check, unit tests (`node:test`) and jsdom smoke tests
@@ -43,6 +43,24 @@ The extension is now the `dist/` folder.
 - Large cards use the 540 px `master1200` thumbnail rebuilt the way
   PixivBatchDownloader does (also covers `custom-thumb` works), with a fallback
   to the list thumbnail.
+
+### Fixed (pre-release audit)
+- Request queue deadlock: a job enqueued synchronously after `clear()` (Stop →
+  Start, navigation → re-probe) could starve forever, because the aborted
+  fetch only released the in-flight slot on a later microtask. The slot is now
+  released by `clear()` itself and stale fetch handlers can no longer clobber
+  the job that replaced theirs. Regression-tested.
+- A probe triggered while a crawl was running (e.g. toggling "check
+  availability" mid-crawl) silently invalidated the crawl and left the UI in
+  the running state forever; probing now defers to a running crawl.
+- Legacy `/search?q=…&type=artwork` was treated as the Illustrations tab, so
+  manga were filtered out; `artwork` now maps to the combined tab like
+  Pixiv's own URLs intend.
+- The locale prefix (`/en/…`) is part of the page identity, so switching
+  Pixiv's language resets and re-probes instead of reusing stale results.
+- Ugoira and page-count badges overlapped on multi-page ugoira cards (the CSS
+  sibling selector could never match the DOM order).
+- Docs said "Firefox 128+" while the manifest requires Firefox 140+.
 
 ### Removed
 - jQuery, `foreground.js`, `background.js` injection, `web_accessible_resources`

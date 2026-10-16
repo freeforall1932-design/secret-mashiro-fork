@@ -50,7 +50,7 @@
     /* The icon is a portrait padded to a square; cover trims the empty sides. */
     object-fit: cover;
     object-position: center;
-    background: var(--m-surface-2, transparent);
+    background: var(--m-bg-3);
 }
 
 .mashiro-panel-titles {

@@ -55,7 +55,9 @@ function tabFor(segment: string | undefined, typeParam: string | null): WorkTab 
             const type = typeParam.toLowerCase();
             if (type === "novel") return null;
             if (type === "manga") return "manga";
-            if (type === "all") return "artworks";
+            // Pixiv calls the combined illust+manga+ugoira tab "artwork"
+            // (older URLs use "all"); everything else is illustration-ish.
+            if (type === "all" || type === "artwork") return "artworks";
             return "illustrations";
         }
         return "top";
@@ -104,7 +106,7 @@ export function parsePage(loc: Pick<Location, "pathname" | "search"> = location)
         type,
         localePrefix,
         pageFilters,
-        key: `${tab}|${word}|${filterKey}`
+        key: `${localePrefix}|${tab}|${word}|${filterKey}`
     };
 }
 

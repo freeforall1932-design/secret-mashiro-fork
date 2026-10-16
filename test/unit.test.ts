@@ -12,6 +12,7 @@ import { ApiError, readPopular, readRecommended, readWorkList, searchUrl, thumbn
 import { setLanguage, t } from "../src/lib/i18n";
 import { LANG_TEXT } from "../src/lib/langText";
 import { RequestQueue, QueueAbortedError } from "../src/lib/requestQueue";
+import { PopularCrawler } from "../src/popular/crawler";
 
 function loc(pathname: string, search = ""): { pathname: string; search: string } {
     return { pathname, search };
@@ -114,6 +115,9 @@ test("pageType: legacy /search?q= and bucket keyword in word", () => {
 
     assert.equal(search("/search", "?q=x&type=manga").apiPath, "manga");
     assert.equal(search("/search", "?q=x&type=all").tab, "artworks");
+    // Pixiv's own legacy URLs call the combined tab "artwork", not "all".
+    assert.equal(search("/search", "?q=x&type=artwork").tab, "artworks");
+    assert.equal(search("/search", "?q=x&type=artwork").apiPath, "artworks");
     assert.equal(parsePage(loc("/search", "?q=x&type=novel")).kind, "other");
 
     const stripped = search("/tags/%E3%82%86%E3%82%8B%E3%82%86%E3%82%8A%2010000users%E5%85%A5%E3%82%8A/illustrations");
@@ -128,6 +132,8 @@ test("pageType: page filters are forwarded, key changes with them", () => {
     assert.equal(b.key, search("/tags/x/illustrations").key, "pagination does not change identity");
     assert.equal(illustrationsTabHref(a), "/tags/x/illustrations?mode=safe&scd=2024-01-01");
     assert.equal(illustrationsTabHref(search("/en/tags/%E6%A1%9C")), "/en/tags/%E6%A1%9C/illustrations");
+    // The locale is part of the page identity: switching it resets the view.
+    assert.notEqual(search("/en/tags/x/illustrations").key, search("/tags/x/illustrations").key);
 });
 
 // ---------------------------------------------------------------- api helpers
@@ -315,4 +321,36 @@ test("requestQueue: priority order, 429 retry, errors and clear", async () => {
     await assert.rejects(slow, QueueAbortedError);
     assert.equal(q.pending, 0);
     assert.equal(order.includes("pending"), false);
+
+    // Regression: a job enqueued synchronously after clear() (Stop → Start,
+    // navigation → probe) must still run. The aborted fetch only rejects on a
+    // later microtask, so the queue used to keep `active` set and the new job
+    // starved forever.
+    const slowAgain = q.enqueue(u("slow"), 0);
+    q.clear();
+    const afterClear = q.enqueue<{ error: boolean; name: string }>(u("after-clear"), 0);
+    await assert.rejects(slowAgain, QueueAbortedError);
+    assert.equal((await afterClear).name, "after-clear");
+    assert.equal(q.pending, 0);
+});
+
+// ---------------------------------------------------------------- crawler
+
+test("crawler: probe never invalidates a running crawl", async () => {
+    const g = globalThis as unknown as Record<string, unknown>;
+    if (!g.window) g.window = globalThis;
+    let fetches = 0;
+    g.fetch = async (): Promise<Response> => {
+        fetches++;
+        return new Response(JSON.stringify({ error: false, body: {} }), { status: 200 });
+    };
+
+    const crawler = new PopularCrawler();
+    crawler.progress.phase = "buckets"; // pretend a crawl is in flight
+    const page = search("/tags/x/illustrations");
+    const result = await crawler.probe(page, { ...DEFAULT_SETTINGS });
+
+    assert.equal(result, "unknown", "probe returns the current availability untouched");
+    assert.equal(fetches, 0, "probe must not send requests while a crawl is running");
+    assert.equal(crawler.isRunning(), true, "the crawl is still the running one");
 });

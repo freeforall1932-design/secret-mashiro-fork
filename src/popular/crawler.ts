@@ -138,6 +138,10 @@ export class PopularCrawler extends Emitter<CrawlerEvents> {
      * second one checks Pixiv's own popular list. Sets `availability`.
      */
     async probe(page: SearchPage, settings: Settings): Promise<Availability> {
+        // Probing bumps the generation, which would silently invalidate a
+        // running crawl and leave its phase stuck at "buckets"/"alt" forever.
+        // A crawl already knows more than a probe would tell us anyway.
+        if (this.isRunning()) return this.availability;
         const generation = ++this.generation;
         this.settings = settings;
         this.setAvailability("probing");

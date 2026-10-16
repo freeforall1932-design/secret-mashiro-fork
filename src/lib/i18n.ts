@@ -22,10 +22,6 @@ export function setLanguage(setting: Language): ResolvedLanguage {
     return current;
 }
 
-export function currentLanguage(): ResolvedLanguage {
-    return current;
-}
-
 export function t(key: TextKey, vars?: Record<string, string | number>): string {
     const row = LANG_TEXT[key] as readonly [string, string, string] | undefined;
     let text = row ? row[COLUMN[current]] || row[0] : key;

@@ -373,7 +373,8 @@ body.mashiro-active nav.mashiro-native-pagination {
 .mashiro-card-r18 { top: 4px; left: 4px; background: var(--m-red); }
 .mashiro-card-ai { bottom: 4px; right: 4px; background: rgba(90, 60, 200, 0.85); }
 .mashiro-card-ugoira { top: 4px; right: 4px; }
-.mashiro-card-pages ~ .mashiro-card-ugoira { right: 34px; }
+/* DOM order is ugoira-then-pages; shift the page badge left when both show. */
+.mashiro-card-ugoira ~ .mashiro-card-pages { right: 34px; }
 .mashiro-card-bucket { bottom: 4px; left: 4px; background: rgba(253, 158, 22, 0.92); }
 
 .mashiro-results.hide-badge .mashiro-card-bucket { display: none; }

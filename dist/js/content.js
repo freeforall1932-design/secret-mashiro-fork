@@ -291,7 +291,7 @@
         const type = typeParam.toLowerCase();
         if (type === "novel") return null;
         if (type === "manga") return "manga";
-        if (type === "all") return "artworks";
+        if (type === "all" || type === "artwork") return "artworks";
         return "illustrations";
       }
       return "top";
@@ -334,7 +334,7 @@
       type,
       localePrefix,
       pageFilters,
-      key: `${tab}|${word}|${filterKey}`
+      key: `${localePrefix}|${tab}|${word}|${filterKey}`
     };
   }
   function artworkHref(page, id) {
@@ -817,6 +817,7 @@
     jobs = [];
     seq = 0;
     active = false;
+    activeJob = null;
     paused = false;
     gapTimer = null;
     retryTimer = null;
@@ -848,11 +849,14 @@
       const dropped = this.jobs;
       this.jobs = [];
       for (const job of dropped) job.reject(new QueueAbortedError());
-      this.controller?.abort();
+      const controller = this.controller;
       this.controller = null;
+      this.active = false;
+      this.activeJob = null;
       this.paused = false;
       this.rateLimitRetries = 0;
       this.clearTimers();
+      controller?.abort();
     }
     resetCounters() {
       this.completedCount = 0;
@@ -871,18 +875,34 @@
       if (this.active || this.paused || this.gapTimer !== null || !this.jobs.length) return;
       const job = this.jobs.shift();
       this.active = true;
+      this.activeJob = job;
       this.controller = new AbortController();
       const started = Date.now();
       fetchJson(job.url, this.controller.signal).then(
         (data) => {
+          if (this.activeJob !== job) {
+            job.resolve(data);
+            return;
+          }
           this.rateLimitRetries = 0;
           this.finish(job, started, true, void 0);
           job.resolve(data);
         },
         (err) => {
           if (err instanceof DOMException && err.name === "AbortError") {
-            this.active = false;
-            job.reject(new QueueAbortedError());
+            if (this.activeJob === job) {
+              this.activeJob = null;
+              this.active = false;
+              this.controller = null;
+              job.reject(new QueueAbortedError());
+              this.pump();
+            } else {
+              job.reject(new QueueAbortedError());
+            }
+            return;
+          }
+          if (this.activeJob !== job) {
+            job.reject(err);
             return;
           }
           const status = err instanceof ApiError ? err.status : void 0;
@@ -890,6 +910,8 @@
             this.rateLimitRetries++;
             this.jobs.unshift(job);
             this.active = false;
+            this.activeJob = null;
+            this.controller = null;
             this.emit("request", { url: job.url, ok: false, status, durationMs: Date.now() - started });
             this.pauseForRateLimit(status);
             return;
@@ -901,6 +923,7 @@
     }
     finish(job, started, ok, status) {
       this.active = false;
+      this.activeJob = null;
       this.controller = null;
       this.completedCount++;
       this.emit("request", { url: job.url, ok, status, durationMs: Date.now() - started });
@@ -1040,6 +1063,7 @@
      * second one checks Pixiv's own popular list. Sets `availability`.
      */
     async probe(page, settings2) {
+      if (this.isRunning()) return this.availability;
       const generation = ++this.generation;
       this.settings = settings2;
       this.setAvailability("probing");
